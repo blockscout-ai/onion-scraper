@@ -1,0 +1,13 @@
+requests
+pytesseract
+opencv-python
+numpy
+Pillow
+beautifulsoup4
+selenium
+eth-utils
+solders
+chromedriver-autoinstaller
+openai
+anthropic
+base58 

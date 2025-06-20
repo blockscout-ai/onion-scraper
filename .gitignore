@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+
+# Package Management
+pip-selfcheck.json
+pip-log.txt
+
+# Output files
+*.csv
+*.log
+screenshots_fast/
+unsolved_captchas_fast/
+captcha_*.png
+duplicate_addresses_fast.csv
+login_attempts.csv
+registration_attempts.csv
+skipped_multi_vendor_markets_fast.csv
+discovered_links_fast.csv 
