@@ -10,4 +10,6 @@ solders
 chromedriver-autoinstaller
 openai
 anthropic
-base58 
+base58
+gspread
+pandas 

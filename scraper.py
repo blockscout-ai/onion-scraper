@@ -28,12 +28,11 @@ import json
 import random
 import openai
 import anthropic
+from config import OPENAI_API_KEY, ANTHROPIC_API_KEY
 chromedriver_autoinstaller.install()
 
 # ---[ AI Configuration ]---
 # Set your API keys here or use environment variables
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
 
 # Initialize AI clients
 try:
@@ -1226,60 +1225,57 @@ try:
     print("🔍 Starting main scraping loop...")
     
     # Main scraping loop
-except Exception as e:
-    print(f"❌ Error in main loop: {str(e)}")
-    exit(1)
-with open(INPUT_CSV, newline='') as f:
-    for idx, row in enumerate(csv.reader(f), start=1):
-        base_url = row[0].strip()
-        if not base_url.startswith("http://"):
-            base_url = "http://" + base_url
-        print(f"\n🔍 [{idx}] Scanning {base_url}")
-            
+    with open(INPUT_CSV, newline='') as f:
+        for idx, row in enumerate(csv.reader(f), start=1):
+            base_url = row[0].strip()
+            if not base_url.startswith("http://"):
+                base_url = "http://" + base_url
+            print(f"\n🔍 [{idx}] Scanning {base_url}")
+
             # Check if this is a multi-vendor market to skip
             if is_multi_vendor_market(base_url):
                 print(f"⏭️ Skipping multi-vendor market: {base_url}")
                 log_skipped_market(base_url, "Multi-vendor market")
                 continue
-                
-        visited = set()
-        to_visit = [(base_url, 0)]
-        while to_visit:
-            current_url, depth = to_visit.pop(0)
+
+            visited = set()
+            to_visit = [(base_url, 0)]
+            while to_visit:
+                current_url, depth = to_visit.pop(0)
                 normalized_url = normalize_url(current_url)
                 if normalized_url in visited or depth > MAX_DEPTH:
-                continue
+                    continue
                 visited.add(normalized_url)
-            try:
-                print(f"🌐 Visiting: {current_url} (depth {depth})")
-                driver.get(current_url)
+                try:
+                    print(f"🌐 Visiting: {current_url} (depth {depth})")
+                    driver.get(current_url)
                     time.sleep(SHORT_WAIT)  # Reduced from 3
-                html = driver.page_source
-                soup = BeautifulSoup(html, 'html.parser')
-                addresses = extract_addresses(html)
-                title = soup.title.string.strip() if soup.title else "NoTitle"
+                    html = driver.page_source
+                    soup = BeautifulSoup(html, 'html.parser')
+                    addresses = extract_addresses(html)
+                    title = soup.title.string.strip() if soup.title else "NoTitle"
 
                     # ✅ 1. Extract addresses first
-                if addresses:
+                    if addresses:
                         print(f"🔍 Found {len(addresses)} addresses on {current_url}")
                         hostname = urlparse(current_url).hostname or ''
                         if hostname.endswith('.onion'):
                             suffix = hostname[:-6][-6:]
                         else:
                             suffix = hostname[-6:]
-                    title_prefix = sanitize_filename(title[:10])
-                    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")[:-3]
-                    for i, (chain, addr) in enumerate(addresses):
+                        title_prefix = sanitize_filename(title[:10])
+                        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")[:-3]
+                        for i, (chain, addr) in enumerate(addresses):
                             print(f"🔍 Processing: {chain} - {addr[:10]}...")
                             if addr in seen:
                                 print(f"⏭️ Skipping duplicate address: {addr[:10]}...")
                                 write_to_csv([current_url, chain, addr, datetime.utcnow().isoformat()], "duplicate_addresses.csv")
-                            continue
+                                continue
                             seen.add(addr)
-                        screenshot_name = f"{title_prefix}_{suffix}_{timestamp}_{i}.png"
-                        screenshot_path = os.path.join(SCREENSHOT_DIR, screenshot_name)
-                        highlight_and_save(driver, addr, screenshot_path)
-                        print(f"🏦 Found {chain} address: {addr[:4]}...{addr[-4:]} → 📸 {screenshot_name}")
+                            screenshot_name = f"{title_prefix}_{suffix}_{timestamp}_{i}.png"
+                            screenshot_path = os.path.join(SCREENSHOT_DIR, screenshot_name)
+                            highlight_and_save(driver, addr, screenshot_path)
+                            print(f"🏦 Found {chain} address: {addr[:4]}...{addr[-4:]} → 📸 {screenshot_name}")
                             write_to_csv([current_url, title, chain, addr, datetime.utcnow().isoformat(), screenshot_path], OUTPUT_CSV)
                         continue
 
@@ -1545,13 +1541,13 @@ with open(INPUT_CSV, newline='') as f:
                     for link in internal_links:
                         if link not in visited and depth < MAX_DEPTH and link not in buy_links:
                             # Prioritize links with payment-related keywords
-                        if any(k in link.lower() for k in KEYWORDS):
-                            to_visit.append((link, depth + 1))
+                            if any(k in link.lower() for k in KEYWORDS):
+                                to_visit.append((link, depth + 1))
                             else:
                                 to_visit.append((link, depth + 1))
 
-            except Exception as e:
-                print(f"❌ Failed: {e}")
+                except Exception as e:
+                    print(f"❌ Failed: {e}")
                     write_to_csv([current_url], "manual_review.csv")
     
     print("✅ Scraping completed successfully!")
@@ -1562,7 +1558,7 @@ except Exception as e:
     print(f"❌ Unexpected error: {e}")
 finally:
     try:
-driver.quit()
+        driver.quit()
         print("🔒 Browser closed")
     except:
         pass

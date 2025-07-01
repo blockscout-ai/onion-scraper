@@ -22,3 +22,74 @@ login_attempts.csv
 registration_attempts.csv
 skipped_multi_vendor_markets_fast.csv
 discovered_links_fast.csv 
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and databases
+*.log
+*.db
+*.sqlite
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Screenshots and outputs
+screenshots/
+*.png
+*.jpg
+*.jpeg
+
+# CSV outputs
+*.csv
+crypto_addresses*.csv
+
+# Knowledge base files
+knowledge_base.json
+*.json
+
+# Backup directories
+backup_*/
+*_backup/
+
+# Chrome temp directories
+chrome_worker_*/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Analysis and optimization files
+*_analysis.py
+*_optimization.py
+*_monitor.py
+comprehensive_analysis.py
+apply_ai_optimizations.py
+monitor_optimizations.py
+
+# Documentation that changes frequently
+*_SUMMARY.md
+*_GUIDE.md
+PHASE_*.md
