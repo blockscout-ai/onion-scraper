@@ -1,0 +1,126 @@
+<html lang="en"><head>
+    <title>Horizon Store</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Cabin">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+    <link href="/Horizon/css/main.min.css" rel="stylesheet">
+    <link rel="icon" href="/Horizon/img/favicon-32x32.png" sizes="32x32" type="image/png">
+</head>
+<body>
+<header class="header navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <div class="header__logo navbar-brand">Horizon</div>
+        <nav class="menu __menu collapse navbar-collapse">
+            <ul class="list menu__list navbar-nav ml-auto">
+                <li class="list__item nav-item"><a class="nav-link" href="/#home">Home</a></li>
+                <li class="list__item nav-item"><a class="nav-link" href="/#features">Features</a></li>
+                <li class="list__item nav-item"><a class="nav-link" href="/#services">Services</a></li>
+                <li class="list__item nav-item"><a class="nav-link" href="/#faq">FAQ</a></li>
+                <li class="list__item nav-item"><a class="nav-link" href="/#options">Options</a></li>
+                <li class="list__item nav-item"><a class="nav-link" href="/#testimonials">Testimonials</a></li>
+                <li class="list__item nav-item"><a class="nav-link" href="/orderstatus">Status</a></li>
+                <li class="list__item nav-item"><a class="nav-link contact-btn" href="/#contact-us">Contact us</a></li>
+            </ul>
+        </nav>
+        <input class="nav-burger__checkbox" type="checkbox" id="burger">
+        <label class="nav-burger" for="burger">Меню</label>
+        <nav class="nav-m"><a class="nav-m__item" href="#home">Home</a><a class="nav-m__item" href="/#features">Features</a><a class="nav-m__item" href="/#services">Services</a><a class="nav-m__item" href="/#faq">FAQ</a><a class="nav-m__item" href="/#options">Options</a><a class="nav-m__item" href="/#testimonials">Testimonials</a><a class="nav-m__item" href="/orderstatus">Status</a><a class="nav-m__item" href="/#contact-us">Contact Us</a>
+        </nav>
+    </div>
+</header><main class="main">
+
+    <section class="heading-section" id="home">
+        <div class="heading-section-overlay"></div>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-7">
+                    <h1 class="heading-section__title">Welcome to Horizon, The Most Friendly Store in Tor</h1>
+                    <p class="heading-section__text">We're selling physical and digital cards</p>
+                    <ul class="heading-benefits">
+                        <li class="heading-benefits__item"><i class="fa fa-check"></i>JavaScript free for your security</li>
+                        <li class="heading-benefits__item"><i class="fa fa-check"></i>Real history of orders</li>
+                        <li class="heading-benefits__item"><i class="fa fa-check"></i>Fast email reply</li>
+                        <li class="heading-benefits__item"><i class="fa fa-check"></i>Order tracking</li>
+                    </ul>
+                    <div class="check-domain">Website is unreachable every 3rd minute
+                        <ul class="check-domain__list">
+                            <li class="check-domain__address"><i class="fa fa-warning"></i>Contact us for better experience</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="fastorder-block">
+                        <h3 class="fastorder-block__title">Fast order</h3>
+                        <div class="fastorder-form fastorder-block__form">
+                            <div class="fastorder-form__status"><i class="fa fa-circle"></i>We're online right now</div>
+                            <div class="fastorder-form__title">Don't want to waist your time?</div>
+                            <div class="fastorder-form__text">Leave your email and we'll contact you within 15 minutes. <br><b>We don't accept *@*.onion emails</b></div>
+                            <form class="fastorder-formblock" action="/leaveemail" method="post">
+                                <input class="fastorder-formblock__input field" name="email" required="" type="email" placeholder="example@protonmail.com">
+                                <input class="form-btn fastorder-formblock__btn" value="Leave my email" type="submit">
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="leave-email-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-8 center">
+                    <div class="ordering-block">
+                        <h4 class="ordering-section__title">Leave an email</h4>
+                        <div class="order-result-block ordering-block__order-result-block">
+                            <div class="result-id order-result-block__result-id">
+                                <div class="result-id__title title-order">Your email</div>
+                                <div class="result-id__id orderid-block__id"></div>
+                            </div>
+                            <div class="result-info order-result-block__result-info">
+                                <div class="result-info__title ordering-section__title">Leaving status</div>
+                                <div class="result-info__text title-order status"><i class="fa fa-warning"></i>Invalid email. Retry it</div>
+                            </div>
+                        </div>
+                        <div class="leave-email-section__return"><a class="title-order" href="/">Return to main page</a></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="contact-section" id="contact-us">
+        <div class="container">
+            <div class="row">
+                <div class="title-section contact-section__title col-md-12">
+                    <div class="title-section__img"></div>
+                    <h2 class="title-section__title">Contact us</h2>
+                    <div class="title-section__text">
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="contact-block">
+                        <div class="contact-block__text">
+                            We strongly recommend you to use protonmail.com<br>This provider could save your time and make safier your connection</div>
+                        <div class="contact-block__email">Email: horizons@cock.lu</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="footer__copyright">© 2025 Horizon Store</div>
+                <div class="footer__email">horizons@cock.lu</div>
+            </div>
+        </div>
+    </div>
+    <div class="seo" style="display: none;">кукла канди, candy dolls, подростки фотомодели, подростки сандра, влада девочка мечты, хардкор без границ, резиновая клиника, голые, глупые и напуганные, брюнетка саша, подросток мартина, анальные фотомодели, подросток мечты, horzu wissen 2010, horzu wissen november 2011, letectvi a kosmonautika 1989 15, tara anal, подростки фотомодели николь, loli incest videos, elise brown, sugar baby, юные девочки в чулках и юбках, 1 st studio, юные девочки в колготках и юбках, anal blonde, erotic 03 1998, home made erotic, hack french, подростки фотомодели симпатяшки, lekki czolg rozpoznawczy tks, юные фотомодели хлоя смешать плавать, 11 naked, czolg rozpoznawczy tks, подростки голые, голые дети, silwa hot lesben, голые девочки, голые мальчики, голые малолетки, голые подростки, голые девочьки, дети нудисты, юные девочки, image board, юные и голые, журнал met art susanna a mavinis, sandra orlow, bely play, подростки фотомодели оленька, ls land, vogue portugal, pleasure model, подростки фотомодели лея, подростки фотомодели хунна, подростки фотомодели хуппа, глупые и голые студентки 10 19, подростки фотомодели хуппа, incest videos, юные фотомодели меги, подростки джульета, magazine fashion, magazine fashion issue, ls magazine issue, ls dreams, agora, abraxas, market, xxx, videos, video, drugs, cannabis, money, tor, torch, ahmia, game, paypal, cc, ccv, credit, cards, ramp, RAMP, outlaw, The Hidden Wiki, hw, wiki, i2p, sex, pgp, gpg, socks5, vpn, buy, sell, vendor, shop, vbv, paypal, financials services, zqktlwi4fecvo6ri.onion, zqktlwi4fecvo6ri, amazon, g2a, guns, apple, hacking, hack, cannabis, atm, visa, mastercard, darknet, reddit, sigaint, jabber,  </div>
+</footer>
+
+</body></html>

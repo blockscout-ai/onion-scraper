@@ -1,0 +1,537 @@
+<html class="font-primary overflow-x-hidden" lang="en"><head>
+    <title>Registration</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="/static/scripts/jquery.js"></script>
+    <link href="/newstatic/styles.css" rel="stylesheet" type="text/css">
+    <link href="/newstatic/media.css" rel="stylesheet" type="text/css">
+    <link href="/static/styles/noty.css" rel="stylesheet">
+    <script src="/static/scripts/noty.js"></script>
+
+    <style type="text/css">
+        .relative:hover .absolute {
+            display: block;
+        }
+    </style>
+
+    <script type="text/javascript">
+        var lang = "en";
+    </script>
+<style>
+
+    .newlogo {
+  background-image: url('/dark.png');
+
+}
+
+/* когда где‑то есть отмеченный чекбокс #theme */
+html:has(#theme:checked) .newlogo {
+  background-image: url('/light.png');
+}
+</style><style>
+    .avatar {
+    width: 48px;
+    height: 48px;
+    display: inline-block;
+    border-radius: 50%;
+    position: relative;
+}
+.cover {
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+    /* Добавьте стили для мобильного меню */
+    .mobile-menu {
+        position: absolute;
+        top: 228px;
+        right: 0;
+        left: 0;
+        background-color: #333;
+        z-index: 10;
+    }
+
+    .mobile-menu a {
+        color: #fff;
+        text-decoration: none;
+    }
+
+    .mobile-menu a:hover {
+        background-color: #444;
+    }
+    .mobile-menu {
+    /* Ваши текущие стили */
+    
+    transition: transform 0.3s ease;
+    transform: translateY(-100%);
+}
+
+.mobile-menu.hidden {
+    transform: translateY(-200%);
+}
+/* Стили для кнопки бургера */
+.burger-button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.burger-button svg {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2;
+}
+
+/* Стили для мобильного меню */
+.mobile-menu {
+    background-color: #333;
+}
+
+.mobile-menu a {
+    display: block;
+    color: #fff;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.mobile-menu a:hover {
+    background-color: #444;
+}
+
+nav > a {
+    display: flex; align-items: center; text-decoration: none;
+}
+nav > div {
+    display: flex; align-items: center; text-decoration: none;
+}
+nav > a > .avatar:hover {
+    opacity: 0.8;
+    transition: 300ms;
+}
+
+.dropdown-content {
+    width: 200px;
+    position: absolute; 
+    display: none;  
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); 
+    z-index: 1;
+    background-color: #2d3748;
+    border-radius: 10px;
+    top:40px;
+    right: 15px
+}
+
+ul.dropdown-content > li > a {
+    display: block; 
+    padding: 8px 16px; 
+    text-decoration: none; 
+    color: white;
+    cursor: pointer;
+    
+}
+.hlink:hover {
+    background-color:#202020
+}
+nav a {
+    font-weight: 500 !important;
+}
+.bg-color2 a {
+    font-weight: 600 !important;
+    font-size: 16px
+}
+/* .dropdown:hover .dropdown-content {
+    display: block !important;
+}
+
+.dropdown-content:hover {
+    display: block !important;
+} */
+
+.dropdown-content li {
+    list-style-type: none;
+}
+
+.dropdown:hover > a > i  {
+    transform: rotate(180deg);
+}
+.dropdown > a > i  {
+    transition: 300ms;
+}
+ul.dropdown-content li a  {
+    font-size: 14px;
+    color: white;
+}
+ul.dropdown-content > li:hover {
+    background: rgb(29, 36, 40);
+    text-decoration: none;
+
+}
+@media(max-width: 1122px) {
+    .rates {
+        display:none
+    }
+}
+.messagesCount {
+    padding-left: 7px;
+    padding-right: 7px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    background: #444343;
+    border-radius: 4px;
+}
+</style><style type="text/css">
+    .logostyle {
+        width: 120px;
+        display:inline-block;
+        filter: drop-shadow(0 0 10px rgba(153, 153, 153, 0.8));
+    }
+
+    @media(max-width: 650px) {     
+        .logostyle {
+            width: 90px;
+            display:inline-block;
+        }
+    }
+</style></head>
+
+<!-- <body class="mx-auto my-0 overflow-y-scroll overflow-x-hidden"> -->
+
+
+
+
+
+
+
+
+
+
+<body><div class="min-h-full w-[98%] 2xl:max-w-5xl mx-auto ">
+
+
+
+
+
+
+<header class="bg-abacus 2xl:bg-back rounded-b-md w-full z-10 flex flex-col-reverse 2xl:flex-col sticky 2xl:static top-0 mb-2">
+
+ <div class="h-[65px] my-0.5 hidden 2xl:block">
+
+        <div class="h-[95%]  mx-auto w-full flex justify-between ">
+
+              <div class="float-left text-left w-[485px] mt-6 ml-3">
+                <a class="flex" href="/">
+                                            <div style="max-width:295px;width:100%; height: 51px;" class="bg-center bg-contain bg-no-repeat picture-logo newlogo"></div>
+                                    </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+<input id="nav" type="checkbox" name="nav" class="absolute hidden">
+
+
+    <!-- CURRENCIES PRICES -->
+    
+   <div style="padding: 8px;width: 300px;text-align: center;justify-content: space-around;" class="hidden overflow-hidden text-white text-xs z-20 2xl:flex bg-abacus px-1.5 py-3 2xl:py-0 2xl:rounded-b-none 2xl:rounded-t-md rounded-b-md rounded-t-none text-right w-auto self-end">
+        1 XMR = 0.00295913 BTC = 314.28 USD    </div>
+
+    <!-- NAVIGATION MENU -->
+
+
+ <div id="nav-menu" class="w-full hidden 2xl:flex flex-col 2xl:flex-row items-center justify-between bg-abacus rounded-b-md rounded-tl-md">
+
+        
+        
+        <div class="flex flex-col gap-1 2xl:gap-0 w-full h-14 2xl:w-auto 2xl:flex-row items-start 2xl:items-center">
+
+        <div class="flex 2xl:hidden w-full items-center justify-evenly mb-2.5">
+                <a href="" class="h-[22px] w-[198px]">
+                    <div class="bg-no-repeat bg-left logo-mobile bg-contain h-[22px] newlogo" style="   "></div>
+                </a>
+                <label for="nav" class="border-solid border-[1px] hover:rotate-90 text-white rounded-full scale-110"><i class="gg-close"></i></label>
+            </div>
+
+             <span class="block 2xl:hidden w-full h-[1px] bg-white">&nbsp;</span>
+
+             <!-- user panel - mobile bar -->
+            
+
+
+
+            <span class="block 2xl:hidden w-full h-[1px] bg-white">&nbsp;</span>
+
+<div class="inline-block relative h-full hover:bg-abacus2 hover:w-full group 2xl:hover:w-[unset] w-full 2xl:w-auto">
+                <a onclick="$('#cats_list').toggle()" class="text-white text-[13px] font-bold leading-[14px] px-[5px] py-[9px] uppercase   hover:bg-abacus2 h-full flex" href="#">
+
+                 <div class="grid grid-cols-[30px,auto] gap-1 items-center"><i class="gg-home justify-self-center"></i><font _mstmutation="1"> Categories</font></div>
+             </a>
+                 <div id="cats_list" class="hidden 2xl:group-hover:block z-10 bg-[#5f6266] rounded-b-md absolute min-w-[220px] w-[unset]">
+                                            <a class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?r=products&amp;category=6">Fake money</a>
+                                                <a class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?r=products&amp;category=7">Documents</a>
+                                                <a class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?r=products&amp;category=8">Software</a>
+                                                <a class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?r=products&amp;category=9">Weapon</a>
+                                                <a class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?r=products&amp;category=10">Hacking</a>
+                                                <a class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?r=products&amp;category=12">Drugs</a>
+                                                <a class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?r=products&amp;category=13">Credit cards</a>
+                                                <a class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?r=products&amp;category=14">Job</a>
+                                                <a class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?r=products&amp;category=15">Services</a>
+                                                <a class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?r=products&amp;category=16">damp+pin</a>
+                                                <a class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?r=products&amp;category=17">Western Union transfers</a>
+                                                <a class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?r=products&amp;category=18">Cryptocurrency exchange</a>
+                                                <a class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?r=products&amp;category=19">Ready business</a>
+                                                <a class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?r=products&amp;category=20">Electronics</a>
+                                            
+                </div>
+            </div>
+
+ <div class="inline-block relative h-full hover:bg-abacus2 hover:w-full group 2xl:hover:w-[unset] w-full 2xl:w-auto">
+                            <a onclick="$('#langs').toggle()" class="text-white text-[13px] font-bold leading-[14px] px-[5px] py-[9px] uppercase hover:bg-abacus2 h-full flex" href="#">
+                                <div class="grid grid-cols-[30px,auto] gap-1 items-center">
+                                    <svg style="    margin-left: 7px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2" width="18" height="18">
+  <circle cx="12" cy="12" r="10"></circle>
+  <line x1="2" y1="12" x2="22" y2="12"></line>
+  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z"></path>
+</svg>
+<font>Language</font>
+                                </div>
+                            </a>
+
+                            <div id="langs" class="hidden 2xl:group-hover:block z-10 bg-[#5f6266] rounded-b-md absolute min-w-[220px] w-[unset]">
+                                <a style="display: none !important;" class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?lang=ru">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="12" viewBox="0 0 18 12" class="inline-block mr-2">
+                                        <rect width="18" height="4" fill="#fff"></rect>
+                                        <rect y="4" width="18" height="4" fill="#0039a6"></rect>
+                                        <rect y="8" width="18" height="4" fill="#d52b1e"></rect>
+                                    </svg>
+                                    Русский
+                                </a>
+                                <a style="" class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?lang=en">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="12" viewBox="0 0 7410 3900" class="inline-block mr-2">
+                                        <rect width="7410" height="3900" fill="#b22234"></rect>
+                                        <path d="M0 450h7410v300H0zm0 600h7410v300H0zm0 600h7410v300H0zm0 600h7410v300H0zm0 600h7410v300H0zm0 600h7410v300H0zm0 600h7410v300H0z" fill="#fff"></path>
+                                        <rect width="2964" height="2100" fill="#3c3b6e"></rect>
+                                        <g fill="#fff">
+                                            <g id="s18">
+                                                <g id="s9">
+                                                    <g id="s5">
+                                                        <g id="s4">
+                                                            <path id="s" d="M247 90 294 222h148l-120 87 46 142-120-87-120 87 46-142-120-87h148z"></path>
+                                                            <use href="#s" y="420"></use>
+                                                            <use href="#s" y="840"></use>
+                                                            <use href="#s" y="1260"></use>
+                                                        </g>
+                                                        <use href="#s" y="1680"></use>
+                                                    </g>
+                                                    <use href="#s4" x="247" y="210"></use>
+                                                </g>
+                                                <use href="#s9" x="494"></use>
+                                            </g>
+                                            <use href="#s18" x="988"></use>
+                                            <use href="#s18" x="1976"></use>
+                                        </g>
+                                    </svg>
+                                    English
+                                </a>
+
+                                <a style="" class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?lang=pl">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="12" viewBox="0 0 18 12" class="inline-block mr-2">
+                                        <rect width="18" height="6" fill="#fff"></rect>
+                                        <rect y="6" width="18" height="6" fill="#dc143c"></rect>
+                                    </svg>
+                                    Polski
+                                </a>
+                                <a style="" class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?lang=fr">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="12" viewBox="0 0 18 12" class="inline-block mr-2">
+                                        <rect width="6" height="12" fill="#0055a4"></rect>
+                                        <rect x="6" width="6" height="12" fill="#fff"></rect>
+                                        <rect x="12" width="6" height="12" fill="#ef4135"></rect>
+                                    </svg>
+                                    Français
+                                </a>
+                                <a style="" class="text-left text-white block text-[13px] font-bold leading-[14px] py-[8px] px-[14px] hover:bg-abacus2" href="/?lang=de">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="12" viewBox="0 0 18 12" class="inline-block mr-2">
+                                        <rect width="18" height="4" fill="#000"></rect>
+                                        <rect y="4" width="18" height="4" fill="#d00"></rect>
+                                        <rect y="8" width="18" height="4" fill="#ffce00"></rect>
+                                    </svg>
+                                    Deutsch
+                                </a>
+                            </div>
+                        </div> <a class="text-white text-[13px] font-bold leading-[14px] px-[10px] py-[9px] uppercase 2xl:px-[14px] 2xl:py-[18px] hover:bg-abacus2 hover:rounded-l-md h-full flex w-full 2xl:w-auto" href="/?r=login">
+                <div class="grid grid-cols-[30px,auto] gap-1 items-center"><i class="gg-log-in justify-self-center"></i>Login in</div>
+            </a>
+
+
+              <a class="text-white text-[13px] font-bold leading-[14px] px-[10px] py-[9px] uppercase 2xl:px-[14px] 2xl:py-[18px] hover:bg-abacus2 h-full flex w-full 2xl:w-auto" href="/?r=register">
+                <div class="grid grid-cols-[30px,auto] gap-1 items-center"><i class="gg-user-add justify-self-center"></i>Register</div>
+            </a>
+
+
+           
+
+
+
+
+
+        </div>
+
+<div class="flex items-center gap-1 relative mobile-hide">
+
+            <!-- theme switch and pop to save var -->
+            
+            <label for="theme" class="themelb rounded-full hover:bg-white text-white hover:text-abacus p-2">
+                <i class="gg-moon"></i>
+                <i class="gg-sun !hidden"></i>
+            </label>
+
+                            <style>
+                    #theme ~ * #pop-theme {
+                    display: none !important;
+                    }
+                    #theme:checked ~ * #pop-theme {
+                    display: flex !important;
+                    }
+                </style>
+
+                <!-- <form id="pop-theme" class="anim anim-fadeIn absolute p-2 right-[50px] border-solid border-abacus2 flex-col items-center w-32 rounded-md bg-white text-abacus top-1/2 -translate-y-1/2 z-50">
+                    <b class="text-xs">Keep change?</b>
+                    <div class="flex gap-2 justify-center">
+                                                    <a href="/?light_mode=off" class="bg-abacus text-white border-0 px-2 rounded py-1 text-xs">Yes</a>
+                                                
+                        <label class="bg-abacus text-white border-0 px-2 rounded py-1 text-xs" for="theme">No</label>
+                    </div>
+
+                </form> -->
+            
+
+            
+                            
+            
+
+
+
+        </div>
+        
+    </div>
+
+    
+   <!-- LOGO & TOGGLE MOBILE -->
+    <div class="flex flex-row-reverse items-center justify-between px-4 2xl:hidden">
+        <a href="/" class="flex items-center">
+            <div class="bg-center object-scale-down bg-contain bg-no-repeat logo-mobile-nav newlogo" style="width:226px; height: 51px;"></div>    
+        </a>  
+
+        <label for="nav" class="text-white h-[30px] border-solid border-transparent hover-border-white hover:bg-white hover:text-abacus flex items-center justify-center rounded">
+            <i class="gg-menu"></i><font _mstmutation="1">&nbsp;Menu
+        </font></label>
+    </div>
+
+</header>
+
+
+<!-- <nav class="bg-color2 py-4 px-3 lg:px-0 mb-2">
+  <div class="container mx-auto flex justify-between items-center">
+
+    <div class="inline items-center">
+      <a href="/" class="text-white text-lg font-bold mr-8 inline">
+        <img src="/static/9fS2K9j0fsOzLO54K4IfzHt5Vy92rlahgfRpxBsq-preview-no-bg.png" class="logostyle" alt="">
+      </a>
+
+      <a href="/?r=products" class="text-white hover:text-gray-300 transition duration-300 hidden md:inline">Products</a>
+      <a href="/?r=stores" class="ml-5 text-white hover:text-gray-300 transition duration-300 hidden md:inline">Stores</a>
+      <a href="/?r=rules" class="ml-5 text-white hover:text-gray-300 transition duration-300 hidden md:inline">Rules</a>
+    </div>
+
+    <div class="relative hidden md:block">
+      <span class="text-white px-2 py-2 border border-transparent rounded-md hlink transition duration-300 hidden:inline rates"> 
+        <span class="text-white text-sm">1 XMR = 0.00295913 BTC = 314.28 USD</span>
+      </span>
+
+              <a href="/?r=login" class="text-white px-4 py-2 border border-transparent rounded-md hlink transition duration-300">Login</a>
+        <a href="/?r=register" class="text-white px-4 py-2 border border-transparent rounded-md hlink transition duration-300">Register</a>
+          </div>
+  </div>
+
+  <div class="md:hidden w-full pt-5" id="mobile-menu" style="display: none;">
+    <ul class="text-white w-full">
+              <li><a href="/?r=login" class="block py-2 px-4 hlink">Login</a></li>
+        <li><a href="/?r=register" class="block py-2 px-4 hlink">Register</a></li>
+          </ul>
+  </div>
+</nav> -->
+
+<link rel="stylesheet" href="/static/fonts/fontawesome.css">
+
+<script>
+  // JavaScript для отображения/скрытия выпадающего меню на мобильных устройствах
+  const mobileMenuButton = document.getElementById('mobile-menu-button');
+  const mobileMenu = document.getElementById('mobile-menu');
+
+  mobileMenuButton.addEventListener('click', () => {
+    mobileMenu.style.display = mobileMenu.style.display === 'none' ? 'block' : 'none';
+  });
+
+  // Скрытие мобильного меню при клике вне его области
+  document.addEventListener('click', function(event) {
+    const isClickInsideMobileMenu = mobileMenu.contains(event.target);
+    const isClickInsideMainMenuButton = mobileMenuButton.contains(event.target);
+    if (!isClickInsideMobileMenu && !isClickInsideMainMenuButton) {
+      mobileMenu.style.display = 'none';
+    }
+  });
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const dropdown = document.querySelector(".dropdown");
+    const dropdownContent = document.querySelector(".dropdown-content");
+
+    let isDropdownHovered = false;
+    let isDropdownContentHovered = false;
+
+    dropdown.addEventListener("mouseenter", function() {
+      isDropdownHovered = true;
+      dropdownContent.style.display = "block";
+      setTimeout(function() {
+        dropdownContent.style.opacity = "1";
+        dropdownContent.style.top = "40px";
+      }, 10);
+    });
+
+    dropdown.addEventListener("mouseleave", function() {
+      isDropdownHovered = false;
+      setTimeout(hideDropdownContent, 200);
+    });
+
+    dropdownContent.addEventListener("mouseenter", function() {
+      isDropdownContentHovered = true;
+    });
+
+    dropdownContent.addEventListener("mouseleave", function() {
+      isDropdownContentHovered = false;
+      setTimeout(hideDropdownContent, 200);
+    });
+
+    function hideDropdownContent() {
+      if (!isDropdownHovered && !isDropdownContentHovered) {
+        dropdownContent.style.opacity = "0";
+        dropdownContent.style.top = "30px";
+        setTimeout(function() {
+          dropdownContent.style.display = "none";
+        }, 200);
+      }
+    }
+  });
+</script>
+
+<section class="container mx-auto pt-1 px-1 bg-color1">
+  <div class="container mx-auto pt-4 text-center">
+      </div>
+</section>
+
+</div></body></html>

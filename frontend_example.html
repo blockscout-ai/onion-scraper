@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onion Scraper Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .controls {
+            padding: 30px;
+            background: white;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .search-box input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .search-box button {
+            padding: 12px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s ease;
+        }
+        
+        .search-box button:hover {
+            background: #5a6fd8;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-select {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .data-section {
+            padding: 30px;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .data-table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .chain-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .chain-btc { background: #f7931a; }
+        .chain-eth { background: #627eea; }
+        .chain-sol { background: #9945ff; }
+        .chain-tron { background: #ff6b35; }
+        .chain-xmr { background: #ff6600; }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .pagination button {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .pagination button:hover {
+            background: #f8f9fa;
+        }
+        
+        .pagination button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Onion Scraper Dashboard</h1>
+            <p>Real-time monitoring of cryptocurrency addresses from dark web sources</p>
+        </div>
+        
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalAddresses">-</div>
+                <div class="stat-label">Total Addresses</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalTrafficking">-</div>
+                <div class="stat-label">Trafficking Alerts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalScams">-</div>
+                <div class="stat-label">Scam Alerts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalChains">-</div>
+                <div class="stat-label">Blockchains</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search addresses, titles, or URLs...">
+                <button onclick="searchData()">Search</button>
+            </div>
+            
+            <div class="filters">
+                <select class="filter-select" id="chainFilter" onchange="filterData()">
+                    <option value="">All Chains</option>
+                    <option value="BTC">Bitcoin (BTC)</option>
+                    <option value="ETH">Ethereum (ETH)</option>
+                    <option value="SOL">Solana (SOL)</option>
+                    <option value="TRON">TRON (TRX)</option>
+                    <option value="XMR">Monero (XMR)</option>
+                </select>
+                
+                <select class="filter-select" id="limitFilter" onchange="filterData()">
+                    <option value="50">50 results</option>
+                    <option value="100">100 results</option>
+                    <option value="200">200 results</option>
+                    <option value="500">500 results</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="data-section">
+            <h2>📊 Address Data</h2>
+            <div id="dataContainer">
+                <div class="loading">Loading data...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let currentData = [];
+        let currentPage = 0;
+        const itemsPerPage = 50;
+
+        // Load initial data
+        window.onload = function() {
+            loadStats();
+            loadAddresses();
+        };
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                const stats = await response.json();
+                
+                document.getElementById('totalAddresses').textContent = stats.total_addresses || 0;
+                document.getElementById('totalTrafficking').textContent = stats.total_trafficking_alerts || 0;
+                document.getElementById('totalScams').textContent = stats.total_scam_alerts || 0;
+                document.getElementById('totalChains').textContent = Object.keys(stats.chains || {}).length;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadAddresses() {
+            try {
+                const chain = document.getElementById('chainFilter').value;
+                const limit = document.getElementById('limitFilter').value;
+                
+                let url = `${API_BASE}/addresses?limit=${limit}`;
+                if (chain) {
+                    url = `${API_BASE}/addresses/${chain}?limit=${limit}`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                currentData = data.data || [];
+                currentPage = 0;
+                displayData();
+            } catch (error) {
+                console.error('Error loading addresses:', error);
+                document.getElementById('dataContainer').innerHTML = 
+                    '<div class="error">Error loading data. Make sure the API server is running on http://localhost:5000</div>';
+            }
+        }
+
+        async function searchData() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) {
+                loadAddresses();
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                currentData = data.data || [];
+                currentPage = 0;
+                displayData();
+            } catch (error) {
+                console.error('Error searching:', error);
+            }
+        }
+
+        function filterData() {
+            loadAddresses();
+        }
+
+        function displayData() {
+            const container = document.getElementById('dataContainer');
+            
+            if (currentData.length === 0) {
+                container.innerHTML = '<div class="loading">No data found</div>';
+                return;
+            }
+            
+            const startIndex = currentPage * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = currentData.slice(startIndex, endIndex);
+            
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Chain</th>
+                            <th>Address</th>
+                            <th>Categories</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            pageData.forEach(item => {
+                const chainClass = `chain-${item.chain?.toLowerCase()}`;
+                const categories = parseCategories(item.categories);
+                
+                html += `
+                    <tr>
+                        <td>${item.title || 'N/A'}</td>
+                        <td><span class="chain-badge ${chainClass}">${item.chain || 'Unknown'}</span></td>
+                        <td><code>${item.address || 'N/A'}</code></td>
+                        <td>${categories.join(', ') || 'N/A'}</td>
+                        <td>${formatTimestamp(item.timestamp)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            
+            // Add pagination
+            const totalPages = Math.ceil(currentData.length / itemsPerPage);
+            if (totalPages > 1) {
+                html += '<div class="pagination">';
+                for (let i = 0; i < totalPages; i++) {
+                    const activeClass = i === currentPage ? 'active' : '';
+                    html += `<button class="${activeClass}" onclick="goToPage(${i})">${i + 1}</button>`;
+                }
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            displayData();
+        }
+
+        function parseCategories(categoriesStr) {
+            try {
+                return JSON.parse(categoriesStr || '[]');
+            } catch {
+                return [];
+            }
+        }
+
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'N/A';
+            try {
+                return new Date(timestamp).toLocaleString();
+            } catch {
+                return timestamp;
+            }
+        }
+
+        // Handle Enter key in search
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchData();
+            }
+        });
+    </script>
+</body>
+</html> 

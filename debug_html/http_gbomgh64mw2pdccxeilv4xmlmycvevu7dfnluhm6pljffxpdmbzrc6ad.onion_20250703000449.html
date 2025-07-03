@@ -1,0 +1,83 @@
+<html><head>
+    <title>TorVendor - Best PayPal &amp; Bank Account Vendor On Tor</title>
+    <link href="/torvendor/css/bootstrap.css" rel="stylesheet" type="text/css">
+    <link href="/torvendor/css/style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<div class="navbar navbar-default">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="/">TorVendor</a>
+        </div>
+        <div class="collapse navbar-collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="/#paypal">PayPal Accounts</a></li>
+                <li><a href="/bank">Bank Accounts</a></li>
+                <li><a href="/support">Support</a></li>
+                <li><a href="/faq">Faq</a></li>
+                <li><a href="/account">Account</a></li>
+            </ul>
+        </div>
+    </div>
+</div><div class="container">
+    <h1>New Order<span class="small pull-right">1 BTC = $108868.41 USD</span></h1>
+    <hr>
+    <div class="row">
+        <div class="col-sm-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h5>Order Details</h5>
+                </div>
+                <div class="panel-body">
+                    <ul class="list-group">
+                        <li class="list-group-item">Type: <b>PayPal</b></li>
+                        <li class="list-group-item">Price: <b>$40.13 USD</b></li>
+                        <li class="list-group-item">Location: <b>United States</b></li>
+                        <li class="list-group-item">Balance: <b>$825.22</b></li>
+                        <li class="list-group-item">Profit: <b>$785.08</b></li>
+                        <li class="list-group-item">Status: <span class="label label-success">Avalible</span></li>
+                    </ul>
+                    <a href="/" class="btn btn-danger btn-block">Cancel Order</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-8">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h5>Finalize Order</h5>
+                </div>
+                <div class="panel-body">
+                    <form action="/payment?id=DB79F05E&amp;type=paypal" method="POST">
+                        <div class="form-group">
+                            <h3>Email Address</h3>
+                            <p>You will recive an access code via email allowing you to login to our site and view your order.</p>
+                            <input type="email" class="form-control" placeholder="Please enter a valid email!" name="email">
+                        </div>
+                        <div class="form-group">
+                            <div class="alert alert-danger">
+                                Please enter a valid email address
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="alert alert-success">
+                                <strong>By ordering you agree to the following</strong>
+                                <ul>
+                                    <li>You have entered a valid email address</li>
+                                    <li>If the account is invalid you will be refunded</li>
+                                    <li>You will contact support if you have any issues</li>
+                                    <li>You will not share our cash out guide</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <p>Once you place the order your price will be locked in regardless of changes in the exchange rate.</p>
+                            <button type="submit" class="btn btn-success">Confirm Order</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body></html>

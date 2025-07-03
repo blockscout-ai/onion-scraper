@@ -39,6 +39,58 @@ python onion_discovery.py --quiet
 - `--verbose`: Enable detailed logging
 - `--quiet`: Enable minimal logging (warnings and errors only)
 
+## Temporary File Management
+
+To prevent codebase clutter from temporary fix scripts, tests, and one-time use files, use the built-in temporary file management system:
+
+### Creating Temporary Scripts
+
+```python
+from temp_file_manager import create_temp_script
+
+# Create a temporary script that auto-deletes after 24 hours
+script_path = create_temp_script(
+    name="quick_fix", 
+    content="""
+import pandas as pd
+# Your temporary code here
+print("This script will auto-delete!")
+""",
+    hours=24
+)
+```
+
+### Command Line Usage
+
+```bash
+# Create a new temporary script
+python temp_file_manager.py create my_test_script
+
+# List all tracked temporary files
+python temp_file_manager.py list
+
+# Clean up expired files
+python temp_file_manager.py cleanup
+
+# Mark an existing file for automatic cleanup
+python temp_file_manager.py mark old_script.py 2  # cleanup in 2 hours
+```
+
+### Features
+
+- **Auto-cleanup**: Files automatically delete after expiration
+- **Tracking**: Registry tracks all temporary files with metadata
+- **Extensions**: Can extend file lifetime if needed
+- **Safe patterns**: Files stored in `temp_files/` directory
+- **Git-ignored**: Temporary files won't be committed to version control
+
+### Best Practices
+
+1. **Always use for temporary work**: Any script that's not permanent core functionality
+2. **Set appropriate lifetimes**: Short for debugging, longer for ongoing work
+3. **Clean regularly**: Run `python temp_file_manager.py cleanup` periodically
+4. **Meaningful names**: Use descriptive names for easier tracking
+
 ## How It Works
 
 ### Phase 1: Keyword Search

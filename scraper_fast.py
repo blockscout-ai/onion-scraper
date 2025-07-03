@@ -34,6 +34,9 @@ import openai
 import anthropic
 import io
 import socket
+import gspread
+import shutil
+import tempfile
 
 # === AGENT SYSTEM INTEGRATION ===
 from integrated_agent_system import integrated_agents
@@ -60,6 +63,112 @@ def load_env_file():
         print("✅ Environment variables loaded successfully")
     else:
         print("⚠️ No .env file found, using system environment variables")
+
+def fetch_google_sheet_addresses():
+    """Fetch all addresses from Google Sheet darknet_automation tab"""
+    try:
+        gc = gspread.service_account(filename=GOOGLE_SHEET_SERVICE_ACCOUNT)
+        sheet = gc.open_by_url(GOOGLE_SHEET_URL).worksheet(GOOGLE_SHEET_NAME)
+        
+        # Get all values from the sheet
+        all_values = sheet.get_all_values()
+        if not all_values:
+            print("⚠️ No data found in Google Sheet")
+            return set()
+        
+        # Find the address column (assuming it's named 'address' or similar)
+        header = all_values[0]
+        address_col_index = None
+        for i, col_name in enumerate(header):
+            if 'address' in col_name.lower():
+                address_col_index = i
+                break
+        
+        if address_col_index is None:
+            print("⚠️ Address column not found in Google Sheet")
+            return set()
+        
+        # Extract addresses from the column
+        addresses = set()
+        for row in all_values[1:]:  # Skip header
+            if len(row) > address_col_index:
+                address = row[address_col_index].strip()
+                if address and address.lower() not in ['', 'nan', 'none']:
+                    addresses.add(address)
+        
+        print(f"✅ Loaded {len(addresses)} addresses from Google Sheet")
+        return addresses
+        
+    except Exception as e:
+        print(f"❌ Error fetching Google Sheet addresses: {e}")
+        return set()
+
+def check_and_move_duplicates():
+    """Check for duplicates in main CSV and move them to duplicate file"""
+    try:
+        if not os.path.exists(OUTPUT_CSV):
+            print("⚠️ Main CSV file not found, skipping duplicate check")
+            return
+        
+        # Get Google Sheet addresses
+        google_addresses = fetch_google_sheet_addresses()
+        
+        # Read main CSV and find duplicates
+        duplicate_rows = []
+        non_duplicate_rows = []
+        
+        with open(OUTPUT_CSV, 'r', encoding='utf-8') as file:
+            csv_reader = csv.reader(file)
+            header = next(csv_reader)  # Get header
+            
+            # Find address column index
+            try:
+                address_col_index = header.index('address')
+            except ValueError:
+                print("❌ 'address' column not found in main CSV")
+                return
+            
+            # Process each row
+            for row in csv_reader:
+                if len(row) > address_col_index:
+                    address = row[address_col_index].strip()
+                    if address in google_addresses:
+                        duplicate_rows.append(row)
+                    else:
+                        non_duplicate_rows.append(row)
+        
+        # Move duplicates to duplicate file
+        if duplicate_rows:
+            # Ensure duplicate file exists with header
+            if not os.path.exists(DUPLICATE_DIVERT_CSV):
+                with open(DUPLICATE_DIVERT_CSV, 'w', newline='', encoding='utf-8') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(header)
+            
+            # Append duplicates to duplicate file
+            with open(DUPLICATE_DIVERT_CSV, 'a', newline='', encoding='utf-8') as file:
+                writer = csv.writer(file)
+                for row in duplicate_rows:
+                    writer.writerow(row)
+            
+            # Rewrite main CSV without duplicates
+            with open(OUTPUT_CSV, 'w', newline='', encoding='utf-8') as file:
+                writer = csv.writer(file)
+                writer.writerow(header)
+                for row in non_duplicate_rows:
+                    writer.writerow(row)
+            
+            print(f"✅ Moved {len(duplicate_rows)} duplicate rows to {DUPLICATE_DIVERT_CSV}")
+            print(f"✅ Main CSV now contains {len(non_duplicate_rows)} non-duplicate rows")
+        else:
+            print("✅ No duplicates found in main CSV")
+            
+    except Exception as e:
+        print(f"❌ Error checking/moving duplicates: {e}")
+
+def is_duplicate_address(address, google_addresses, local_seen_addresses):
+    """Check if address is duplicate in either Google Sheet or local processing"""
+    return address in google_addresses or address in local_seen_addresses
 
 # Load environment variables before importing other modules
 load_env_file()
@@ -145,14 +254,14 @@ input_rotation_lock = threading.Lock()
 # Resume configuration - set to start from a specific row (1-based indexing)
 # Set START_FROM_ROW = 1 to start from the beginning
 # Set START_FROM_ROW = N to start from row N (where N is the row number in the CSV)
-START_FROM_ROW = 3233  # Currently set to start from row 3233
+START_FROM_ROW = 2  # Currently set to start from row 3233
 OUTPUT_CSV = "crypto_addresses_fast.csv"
 SCREENSHOT_DIR = "screenshots_fast"
 CAPTCHA_FAILED_CSV = "captcha_failed_fast.csv"
 UNSOLVED_DIR = "unsolved_captchas_fast"
-MAX_DEPTH = 8  # Reduced for speed
+MAX_DEPTH = 4  # Reduced for speed
 PAGE_LOAD_TIMEOUT = 45  # Reduced to avoid Chrome internal limits
-MAX_WORKERS = 12  # Reduced from 24 to improve success rate (within 8-12 range)
+MAX_WORKERS = 12  # Reduced to prevent DevTools port conflicts on macOS
 FAST_MODE = True
 HEADLESS_MODE = True  # Changed to False to watch browser
 BATCH_SIZE = 20  # Batch CSV writes
@@ -163,6 +272,13 @@ SAVE_INTERVAL = 25  # More frequent saves
 BACKUP_INTERVAL = 50  # More frequent backups
 MEMORY_LIMIT = 100  # Max URLs in memory before processing
 
+# ---[ GOOGLE SHEET DUPLICATE CHECKING CONFIG ]---
+GOOGLE_SHEET_SERVICE_ACCOUNT = '/Users/jasoncomer/Desktop/blockscout_python/ofac-automation-52b699a4735a.json'
+GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/14ApkAb5jHTv-wzP8CFJTax31UXYkFb0ebDDd6Bg1EC8/edit#gid=1998112463'
+GOOGLE_SHEET_NAME = 'darknet_automation'
+GOOGLE_SHEET_CHECK_INTERVAL = 50  # Check every 50 URLs
+DUPLICATE_DIVERT_CSV = 'duplicated_address_0702.csv'
+
 # ---[ HUMAN TRAFFICKING DETECTION CONFIGURATION ]---
 # Priority thresholds for human trafficking alerts
 TRAFFICKING_CRITICAL_THRESHOLD = 15  # Score for CRITICAL priority
@@ -170,7 +286,7 @@ TRAFFICKING_HIGH_THRESHOLD = 10      # Score for HIGH priority
 TRAFFICKING_MEDIUM_THRESHOLD = 5     # Score for MEDIUM priority
 
 # Alert file for human trafficking detections
-HUMAN_TRAFFICKING_ALERTS_CSV = "human_trafficking_alerts.csv"
+HUMAN_TRAFFICKING_ALERTS_CSV = "human_trafficking_alerts_0702.csv"
 
 # Alert file for scam detections
 SCAM_ALERTS_CSV = "scam_alerts.csv"
@@ -202,9 +318,9 @@ ENABLE_RETRY_LIST = True
 RETRY_REASONS = ["captcha_failed", "login_failed", "registration_failed", "form_submission_failed"]
 
 # Enhanced speed optimization settings
-SHORT_WAIT = 2.0  # Increased from 1.0 to 2.0 for better reliability
-MEDIUM_WAIT = 3.0  # Increased from 2.0 to 3.0 for conservative approach
-LONG_WAIT = 8.0   # Increased from 5.0 to 8.0 for extra safety
+SHORT_WAIT = 3.0  # Increased from 2.0 to 3.0 for better title loading
+MEDIUM_WAIT = 4.0  # Increased from 3.0 to 4.0 for conservative approach
+LONG_WAIT = 10.0   # Increased from 8.0 to 10.0 for extra safety
 # Screenshots are ALWAYS taken for every address found
 
 # Thread-safe CSV writing
@@ -454,13 +570,13 @@ CATEGORY_KEYWORDS = {
 def log_skipped_market(url, reason="Multi-vendor market"):
     """Log skipped markets"""
     timestamp = datetime.utcnow().isoformat()
-    write_to_csv_threadsafe([url, reason, timestamp], SKIPPED_MARKETS_CSV)
+    write_to_csv_threadsafe([get_base_domain(url), reason, timestamp], SKIPPED_MARKETS_CSV)
 
 def log_discovered_links(base_url, links, link_type="internal"):
     """Log discovered links to CSV"""
     timestamp = datetime.utcnow().isoformat()
     for link in links:
-        write_to_csv_threadsafe([base_url, link, link_type, timestamp], DISCOVERED_LINKS_CSV)
+        write_to_csv_threadsafe([get_base_domain(base_url), link, link_type, timestamp], DISCOVERED_LINKS_CSV)
 
 # Fast address validators
 def is_valid_btc_address(addr):
@@ -847,6 +963,14 @@ def normalize_url(url):
     parsed = urlparse(url)
     return f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
 
+def get_base_domain(url):
+    """Extract just the base domain from a URL for display purposes"""
+    try:
+        parsed = urlparse(url)
+        return parsed.hostname or url
+    except:
+        return url
+
 def get_internal_links_fast(soup, base_url):
     """Enhanced internal link extraction with payment/wallet page prioritization"""
     links = []
@@ -918,6 +1042,51 @@ def get_or_set_root_title(url, current_title):
     except Exception as e:
         print(f"⚠️ Error in get_or_set_root_title: {e}")
         return current_title
+
+def wait_for_title_to_load(driver, timeout=15):
+    """Wait for the page title to change from loading states like 'One moment, please...'"""
+    loading_titles = [
+        "One moment, please...",
+        "Loading...",
+        "Please wait...",
+        "Loading page...",
+        "Page is loading...",
+        "Just a moment...",
+        "Please wait while we load...",
+        "Loading, please wait...",
+        "One moment please...",
+        "Loading page, please wait...",
+        "Please wait while the page loads...",
+        "Loading, one moment...",
+        "Page loading...",
+        "Loading, please wait a moment...",
+        "One moment while we load...",
+        "Please wait, loading...",
+        "Loading, just a moment...",
+        "Page is loading, please wait...",
+        "Loading, please wait while we prepare...",
+        "One moment while we prepare the page..."
+    ]
+    
+    def check_title_loaded(_driver):
+        try:
+            current_title = _driver.title.strip()
+            # Check if title is still a loading state
+            for loading_title in loading_titles:
+                if loading_title.lower() in current_title.lower():
+                    return False
+            # Also check if title is empty or very short (likely still loading)
+            if not current_title or len(current_title) < 3:
+                return False
+            return True
+        except:
+            return False
+    
+    try:
+        WebDriverWait(driver, timeout).until(check_title_loaded)
+        return True
+    except:
+        return False
 
 def wait_for_address_in_dom(driver, timeout=15):
     """Enhanced wait for cryptocurrency addresses to appear in the DOM with dynamic content detection"""
@@ -1239,8 +1408,17 @@ def process_url_fast(url, worker_id):
     global urls_since_rotation
     driver = None
     results = [] # Initialize results list at the top level of the function
+    
+    # === ML LEARNING SYSTEM INTEGRATION ===
+    ml_extractor = None
     try:
-        print(f"🔍 [{worker_id}] Processing: {url}")
+        from ml_learning_system import get_ml_extractor
+        ml_extractor = get_ml_extractor()
+    except Exception as e:
+        print(f"⚠️ [{worker_id}] ML system initialization failed: {e}")
+    
+    try:
+        print(f"🔍 [{worker_id}] Processing: {get_base_domain(url)}")
         
         # === AGENT SYSTEM INTEGRATION ===
         strategy = 1  # Default strategy
@@ -1266,7 +1444,7 @@ def process_url_fast(url, worker_id):
                     print(f"⚠️ [{worker_id}] TOR rotation failed, continuing with current identity")
         
         if is_multi_vendor_market(url):
-            print(f"⏭️ [{worker_id}] Skipping multi-vendor market: {url}")
+            print(f"⏭️ [{worker_id}] Skipping multi-vendor market: {get_base_domain(url)}")
             log_skipped_market(url, "Multi-vendor market")
             # Record failure in agent system
             try:
@@ -1275,10 +1453,19 @@ def process_url_fast(url, worker_id):
                 pass
             return []
         
-        driver = create_driver(worker_id)
-        print(f"🌐 [{worker_id}] Loading page: {url}")
-        driver.get(url)
-        time.sleep(SHORT_WAIT)
+        try:
+            driver = create_driver(worker_id)
+            print(f"🌐 [{worker_id}] Loading page: {get_base_domain(url)}")
+            driver.get(url)
+            time.sleep(SHORT_WAIT)
+        except Exception as e:
+            print(f"❌ [{worker_id}] Failed to create driver or load page: {e}")
+            # Record failure in agent system
+            try:
+                integrated_agents.record_failure(url, "driver_creation_failed", strategy, worker_id, "driver_creation")
+            except:
+                pass
+            return []
 
         # Detect Chrome error page (e.g., ERR_SOCKS_CONNECTION_FAILED) and abort early
         error_markers = [
@@ -1290,11 +1477,18 @@ def process_url_fast(url, worker_id):
             "This site can't be reached",
         ]
         if any(marker.lower() in driver.page_source.lower() for marker in error_markers):
-            print(f"⚠️ [{worker_id}] Chrome error page detected for {url} – skipping further processing.")
+            print(f"⚠️ [{worker_id}] Chrome error page detected for {get_base_domain(url)} – skipping further processing.")
             driver.quit()
             return []
 
-        # Get initial page content and classify it first, so AI functions can use it
+        # Wait for the page title to load properly (not loading states like "One moment, please...")
+        print(f"⏳ [{worker_id}] Waiting for page title to load...")
+        if wait_for_title_to_load(driver, timeout=15):
+            print(f"✅ [{worker_id}] Page title loaded successfully")
+        else:
+            print(f"⚠️ [{worker_id}] Page title may still be loading, continuing anyway")
+
+        # Get page content after title has loaded
         html = driver.page_source
         soup = BeautifulSoup(html, 'html.parser')
         current_page_title = soup.title.string.strip() if soup.title else "NoTitle"
@@ -1303,6 +1497,34 @@ def process_url_fast(url, worker_id):
         title = get_or_set_root_title(url, current_page_title)
         
         categories = classify_site(url, title, html)
+        
+        # Record site features in ML system
+        if ml_extractor:
+            try:
+                # Create SiteFeatures object
+                from ml_learning_system import SiteFeatures
+                site_features = SiteFeatures(
+                    has_cart=len(soup.find_all('button', string=lambda x: x and 'cart' in x.lower())) > 0,
+                    has_registration=len(soup.find_all('a', string=lambda x: x and 'register' in x.lower())) > 0,
+                    has_login=len(soup.find_all('a', string=lambda x: x and 'login' in x.lower())) > 0,
+                    has_search=len(soup.find_all('input', {'type': 'search'})) > 0,
+                    has_categories=len(soup.find_all('a', string=lambda x: x and 'category' in x.lower())) > 0,
+                    page_type="market" if any(cat in categories for cat in ['marketplace', 'carding']) else "unknown",
+                    has_payment_forms=len(soup.find_all('form', string=lambda x: x and 'payment' in x.lower())) > 0,
+                    has_bitcoin_mentions='bitcoin' in html.lower(),
+                    has_crypto_mentions=any(crypto in html.lower() for crypto in ['crypto', 'bitcoin', 'ethereum', 'monero']),
+                    has_wallet_mentions='wallet' in html.lower(),
+                    text_length=len(soup.get_text()),
+                    link_count=len(soup.find_all('a')),
+                    form_count=len(soup.find_all('form')),
+                    button_count=len(soup.find_all('button')),
+                    input_count=len(soup.find_all('input'))
+                )
+                # Store site features for later use
+                ml_extractor._current_site_features = site_features
+                print(f"🤖 [{worker_id}] ML: Recorded site features")
+            except Exception as e:
+                print(f"⚠️ [{worker_id}] ML site features recording failed: {e}")
         
         # Run specialized human trafficking detection
         trafficking_alert = detect_human_trafficking_priority(url, title, html)
@@ -1433,12 +1655,29 @@ def process_url_fast(url, worker_id):
         scroll_entire_page(driver)
         
         # Step 2: Traditional address extraction
+        extraction_start_time = time.time()
         if USE_ENHANCED_EXTRACTION:
             addresses = extract_addresses_enhanced(driver.page_source, url, title)
+            extraction_method = "enhanced"
             print(f"🔍 [{worker_id}] Enhanced extraction found {len(addresses)} addresses")
         else:
             addresses = extract_addresses_fast(driver.page_source)
+            extraction_method = "fast"
             print(f"⚡ [{worker_id}] Fast extraction found {len(addresses)} addresses")
+        
+        # Record extraction attempt in ML system
+        if ml_extractor:
+            try:
+                extraction_time = time.time() - extraction_start_time
+                success = len(addresses) > 0
+                ml_extractor.record_extraction_attempt(
+                    strategy=strategy,
+                    success=success,
+                    time_taken=extraction_time
+                )
+                print(f"🤖 [{worker_id}] ML: Recorded extraction attempt (success={success}, time={extraction_time:.2f}s)")
+            except Exception as e:
+                print(f"⚠️ [{worker_id}] ML recording failed: {e}")
         
         # Step 3: Wait for dynamic content if no addresses found
         if len(addresses) == 0:
@@ -1777,7 +2016,7 @@ def process_url_fast(url, worker_id):
             print(f"🔍 [{worker_id}] Debug: {len(addresses)} total addresses, {len(new_addresses)} new addresses")
             print(f"🔍 [{worker_id}] Debug: existing_addrs count: {len(existing_addrs)}")
             if new_addresses:
-                print(f"✅ [{worker_id}] Found {len(new_addresses)} new addresses on {url}")
+                print(f"✅ [{worker_id}] Found {len(new_addresses)} new addresses on {get_base_domain(url)}")
                 hostname = urlparse(url).hostname or ''
                 if hostname.endswith('.onion'):
                     suffix = hostname[:-6][-6:]
@@ -1809,7 +2048,7 @@ def process_url_fast(url, worker_id):
                     # Use standard categories since scam sites are now properly skipped
                     categories_out = list(categories) if isinstance(categories, list) else []
                     result_row = {
-                        'url': url,
+                        'url': get_base_domain(url),
                         'title': display_title,
                         'description': description,
                         'chain': chain,
@@ -1898,7 +2137,7 @@ def process_url_fast(url, worker_id):
                                 screenshot_path = "screenshot_failed.png"
                             
                             results.append({
-                                'url': external_url,
+                                'url': get_base_domain(external_url),
                                 'title': external_title,
                                 'description': description,
                                 'chain': chain,
@@ -2010,7 +2249,7 @@ def process_url_fast(url, worker_id):
                                 screenshot_path = "screenshot_failed.png"
                             
                             results.append({
-                                'url': link_url,
+                                'url': get_base_domain(link_url),
                                 'title': link_title,
                                 'description': description,
                                 'chain': chain,
@@ -2041,15 +2280,46 @@ def process_url_fast(url, worker_id):
                 print(f"📝 [{worker_id}] Found {len(internal_links)} internal links (visiting immediately)")
                 # log_discovered_links(url, internal_links, "internal")  # No longer needed - links visited immediately
                 # print(f"📝 [{worker_id}] Logged {len(internal_links)} internal links to CSV")  # No longer needed
+        # Record final site results in ML system
+        if ml_extractor and hasattr(ml_extractor, '_current_site_features'):
+            try:
+                from ml_learning_system import ExtractionAttempt
+                total_addresses = len(results)
+                success = total_addresses > 0
+                
+                # Create extraction attempt record
+                extraction_attempt = ExtractionAttempt(
+                    strategy=strategy,
+                    success=success,
+                    time_taken=time.time() - extraction_start_time if 'extraction_start_time' in locals() else 0.0,
+                    addresses_found=total_addresses
+                )
+                
+                # Get final addresses
+                final_addresses = [result['address'] for result in results] if results else []
+                
+                # Record site result with correct parameters
+                ml_extractor.record_site_result(
+                    url=url,
+                    features=ml_extractor._current_site_features,
+                    attempts=[extraction_attempt],
+                    final_addresses=final_addresses,
+                    total_time=time.time() - extraction_start_time if 'extraction_start_time' in locals() else 0.0,
+                    success=success
+                )
+                print(f"🤖 [{worker_id}] ML: Recorded site result (success={success}, addresses={total_addresses})")
+            except Exception as e:
+                print(f"⚠️ [{worker_id}] ML site result recording failed: {e}")
+        
         if len(results) == 0:
-            print(f"❌ [{worker_id}] No addresses found on {url}")
+            print(f"❌ [{worker_id}] No addresses found on {get_base_domain(url)}")
             # Record failure in agent system
             try:
                 integrated_agents.record_failure(url, "no_addresses", strategy, worker_id, "address_extraction")
             except:
                 pass
         else:
-            print(f"🎉 [{worker_id}] Successfully processed {len(results)} addresses from {url}")
+            print(f"🎉 [{worker_id}] Successfully processed {len(results)} addresses from {get_base_domain(url)}")
             print(f"📊 [{worker_id}] Final results summary:")
             for i, result in enumerate(results):
                 print(f"   {i+1}. {result['chain']} - {result['address'][:8]}...{result['address'][-8:]} → 📸 {result['screenshot']}")
@@ -2060,7 +2330,7 @@ def process_url_fast(url, worker_id):
                 pass
         return results
     except Exception as e:
-        print(f"❌ [{worker_id}] Error processing {url}: {e}")
+        print(f"❌ [{worker_id}] Error processing {get_base_domain(url)}: {e}")
         
         # Record failure in agent system
         try:
@@ -2098,7 +2368,7 @@ def process_url_fast(url, worker_id):
     finally:
         if driver:
             try:
-                print(f"🔒 [{worker_id}] Closing browser for {url}")
+                print(f"🔒 [{worker_id}] Closing browser for {get_base_domain(url)}")
                 driver.quit()
             except:
                 pass
@@ -2132,7 +2402,7 @@ def ai_generate_fake_user():
         username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
         password = ''.join(random.choices(string.ascii_letters + string.digits + '!@#$%^&*', k=14))
         email = username + '@protonmail.com'
-        btc_address = '1' + ''.join(random.choices(string.ascii_letters + string.digits, k=33))
+        btc_address = '1' + ''.join(random.choices(string.ascii_lowercase + string.digits, k=33))
         pin = ''.join(random.choices(string.digits, k=4))
         invite_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         pgp_key = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' + ''.join(random.choices(string.ascii_letters + string.digits, k=100)) + '\n-----END PGP PUBLIC KEY BLOCK-----'
@@ -2250,9 +2520,9 @@ def ai_handle_registration_enhanced(driver, url, categories=None):
         # Find signup buttons by text
         signup_texts = ['sign up', 'signup', 'register', 'join', 'create account', 'join now']
         for text in signup_texts:
-            buttons = driver.find_elements(By.XPATH, f"//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{text}')]")
-            buttons.extend(driver.find_elements(By.XPATH, f"//a[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{text}')]"))
-            buttons.extend(driver.find_elements(By.XPATH, f"//input[@type='submit'][contains(translate(@value, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{text}')]"))
+            buttons = driver.find_elements(By.XPATH, f"//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{text}')]" )
+            buttons.extend(driver.find_elements(By.XPATH, f"//a[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{text}')]" ))
+            buttons.extend(driver.find_elements(By.XPATH, f"//input[@type='submit'][contains(translate(@value, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{text}')]" ))
             signup_buttons.extend(buttons)
         
         # Try clicking signup buttons
@@ -2457,13 +2727,21 @@ def enhanced_registration_form_fill(driver, form, url):
                     inp.send_keys(registration_data['age'])
                     fields_filled += 1
                 elif 'captcha' in field_identifier or 'result' in field_identifier:
-                    # Handle math captcha
-                    captcha_result = solve_math_captcha_from_page(driver, form)
-                    if captcha_result is not None:
-                        inp.clear()
-                        inp.send_keys(str(captcha_result))
-                        fields_filled += 1
-                        print(f"      -> Solved math captcha: {captcha_result}")
+                    # Handle math captcha - look for captcha text on the page
+                    try:
+                        captcha_elements = form.find_elements(By.XPATH, ".//*[contains(text(), '+') or contains(text(), '-') or contains(text(), '*') or contains(text(), '=')]")
+                        for captcha_elem in captcha_elements:
+                            captcha_text = captcha_elem.text.strip()
+                            if any(op in captcha_text for op in ['+', '-', '*', '=']):
+                                captcha_result = solve_math_captcha(captcha_text)
+                                if captcha_result is not None:
+                                    inp.clear()
+                                    inp.send_keys(str(captcha_result))
+                                    fields_filled += 1
+                                    print(f"      -> Solved math captcha: {captcha_text} = {captcha_result}")
+                                    break
+                    except:
+                        pass
                 elif field_type == 'checkbox':
                     if 'agree' in field_identifier or 'terms' in field_identifier or 'accept' in field_identifier:
                         if not inp.is_selected():
@@ -3852,7 +4130,7 @@ def handle_country_field_final(driver, field, platform_detected, field_id, is_se
                     print(f"        ⌨️ Trying Enter key as fallback...")
                     from selenium.webdriver.common.keys import Keys
                     search_box.send_keys(Keys.ENTER)
-                    time.sleep(2)
+                    time.sleep(2)  # Extra time for filtering and results to appear
                     
                     selected_text = select2_selection.find_element(By.CSS_SELECTOR, ".select2-selection__rendered").text
                     if 'united states' in selected_text.lower():
@@ -3909,7 +4187,7 @@ def handle_country_field_final(driver, field, platform_detected, field_id, is_se
             
             # Try Enter first
             field.send_keys(Keys.ENTER)
-            time.sleep(2)  # Extra time
+            time.sleep(2)  # Extra time for filtering and results to appear
             
             # Check if it worked
             current_value = field.get_attribute('value') or ''
@@ -4195,7 +4473,7 @@ def attempt_form_fill(driver, form, url, form_type):
             'exp': '12/29',
             'iban': 'DE89370400440532013000',
             'swift': 'DEUTDEFF',
-            'ssn': '123-45-6789',
+            'ssn': '12-3456789',
             'taxid': '12-3456789',
             'company': 'Acme Corp',
             'website': 'https://example.com',
@@ -5213,13 +5491,13 @@ def add_to_retry_list(url, reason, details=""):
     if reason in RETRY_REASONS:
         retry_data = [url, reason, details, datetime.utcnow().isoformat()]
         write_to_csv_threadsafe(retry_data, RETRY_LIST_CSV)
-        print(f"📝 Added to retry list: {url} (Reason: {reason})")
+        print(f"📝 Added to retry list: {get_base_domain(url)} (Reason: {reason})")
     else:
         print(f"⏭️ Not adding to retry list: {url} (Reason: {reason} - not retryable)")
 
 def process_url_immediately(url, worker_id, priority="HIGH"):
     """Immediately process a high-priority URL for human trafficking detection"""
-    print(f"🚨 [{worker_id}] IMMEDIATE PROCESSING - {priority} PRIORITY URL: {url}")
+    print(f"🚨 [{worker_id}] IMMEDIATE PROCESSING - {priority} PRIORITY URL: {get_base_domain(url)}")
     
     # Initialize variables to ensure they are available in the 'finally' block
     driver = None
@@ -5235,7 +5513,7 @@ def process_url_immediately(url, worker_id, priority="HIGH"):
         driver.set_page_load_timeout(30)  # Faster timeout for immediate processing
         driver.set_script_timeout(20)  # Add script timeout for immediate processing
         
-        print(f"🌐 [{worker_id}] Loading page immediately: {url}")
+        print(f"🌐 [{worker_id}] Loading page immediately: {get_base_domain(url)}")
         driver.get(url)
         time.sleep(SHORT_WAIT)
         
@@ -5244,11 +5522,18 @@ def process_url_immediately(url, worker_id, priority="HIGH"):
         if any(ind in _err_ps for ind in [
             "err_socks_connection_failed", "err_tunnel_connection_failed",
             "err_connection_timed_out", "this site can't be reached"]):
-            print(f"⚠️ [{worker_id}] Chrome error page detected for {url} – skipping immediate processing.")
+            print(f"⚠️ [{worker_id}] Chrome error page detected for {get_base_domain(url)} – skipping immediate processing.")
             driver.quit()
             return []
         
-        # Get page content and run detection
+        # Wait for the page title to load properly
+        print(f"⏳ [{worker_id}] Waiting for page title to load (immediate processing)...")
+        if wait_for_title_to_load(driver, timeout=10):  # Shorter timeout for immediate processing
+            print(f"✅ [{worker_id}] Page title loaded successfully")
+        else:
+            print(f"⚠️ [{worker_id}] Page title may still be loading, continuing anyway")
+        
+        # Get page content after title has loaded
         html = driver.page_source
         soup = BeautifulSoup(html, 'html.parser')
         current_page_title = soup.title.string.strip() if soup.title else "NoTitle"
@@ -5293,7 +5578,7 @@ def process_url_immediately(url, worker_id, priority="HIGH"):
                     addr_screenshot_path = "screenshot_failed.png"
                 
                 results.append({
-                    'url': url,
+                    'url': get_base_domain(url),
                     'title': title,
                     'description': description,
                     'chain': chain,
@@ -5309,17 +5594,17 @@ def process_url_immediately(url, worker_id, priority="HIGH"):
         
         # Log immediate processing results
         immediate_data = [
-            url, title, priority, str(trafficking_alert['score']),
+            get_base_domain(url), title, priority, str(trafficking_alert['score']),
             trafficking_alert['priority'], "|".join(trafficking_alert['patterns']),
             len(addresses), "address_screenshots_only", datetime.utcnow().isoformat()
         ]
         write_to_csv_threadsafe(immediate_data, "immediate_processing_log.csv")
         
-        print(f"🎉 [{worker_id}] Immediate processing completed for {url}")
+        print(f"🎉 [{worker_id}] Immediate processing completed for {get_base_domain(url)}")
         return results
         
     except Exception as e:
-        print(f"❌ [{worker_id}] Immediate processing failed for {url}: {e}")
+        print(f"❌ [{worker_id}] Immediate processing failed for {get_base_domain(url)}: {e}")
         # Add to retry list if it's a captcha/login failure
         if any(reason in str(e).lower() for reason in RETRY_REASONS):
             retry_data = [url, "immediate_processing_failed", str(e), datetime.utcnow().isoformat()]
@@ -5476,8 +5761,20 @@ def main():
                 writer.writerow(['url', 'reason', 'details', 'timestamp'])
             print(f"🔄 Created retry list file: {RETRY_LIST_CSV}")
         
+        # Create duplicate divert CSV with headers if it doesn't exist
+        if not os.path.exists(DUPLICATE_DIVERT_CSV):
+            with open(DUPLICATE_DIVERT_CSV, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['url', 'title', 'chain', 'address', 'timestamp', 'screenshot', 'categories', 'description', 'scam'])
+            print(f"🔄 Created duplicate divert file: {DUPLICATE_DIVERT_CSV}")
+        
         # Initialize TOR rotation counter
         urls_since_rotation = 0
+        
+        # Initialize Google Sheet duplicate checking
+        print("🔍 Initializing Google Sheet duplicate checking...")
+        google_addresses = fetch_google_sheet_addresses()
+        print(f"📊 Loaded {len(google_addresses)} addresses from Google Sheet")
         
         # Initialize seen_addresses set before URL loading
         seen_addresses = set()
@@ -5497,6 +5794,10 @@ def main():
                 print(f"📋 Loaded {len(seen_addresses)} existing addresses from {OUTPUT_CSV}")
             except Exception as e:
                 print(f"⚠️ Could not load existing addresses: {e}")
+        
+        # Perform initial duplicate check and move any existing duplicates
+        print("🔍 Performing initial duplicate check...")
+        check_and_move_duplicates()
         
         # Read URLs from current input file with unique address tracking
         current_file = get_next_input_file()
@@ -5521,6 +5822,10 @@ def main():
         error_count = 0
         start_time = datetime.utcnow()
         
+        # Add delay between worker starts to prevent Chrome conflicts
+        print(f"🔧 Starting {MAX_WORKERS} workers with staggered initialization...")
+        time.sleep(2)  # Small delay before starting workers
+        
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
             # Submit all URLs with retry logic
             if ENABLE_RETRY_LOGIC:
@@ -5544,7 +5849,30 @@ def main():
                     print(f"⏱️  Rate: {rate:.1f} URLs/sec, ETA: {eta/60:.1f} minutes")
                     print(f"✅ Success: {success_count}, ❌ Errors: {error_count}")
                     print(f"🏦 Addresses found: {len(all_results)}")
+                    
+                    # ML Learning Stats Update
+                    try:
+                        from ml_learning_system import get_ml_extractor
+                        ml = get_ml_extractor()
+                        stats = ml.get_learning_stats()
+                        print(f"🤖 ML Stats: {stats['total_sites_processed']} sites, "
+                              f"{stats['overall_success_rate']:.1%} success rate, "
+                              f"{stats['total_extraction_attempts']} attempts")
+                        if stats['recent_performance']:
+                            print(f"📊 Recent: {stats['recent_performance']['success_rate']:.1%} success rate "
+                                  f"({stats['recent_performance']['attempts_count']} attempts)")
+                    except Exception as e:
+                        print(f"⚠️ ML stats error: {e}")
+                    
                     print("-" * 40)
+                
+                # Periodic Google Sheet duplicate check
+                if processed_count % GOOGLE_SHEET_CHECK_INTERVAL == 0:
+                    print(f"🔍 Periodic duplicate check at {processed_count} URLs...")
+                    # Reload Google Sheet addresses
+                    google_addresses = fetch_google_sheet_addresses()
+                    # Check and move duplicates
+                    check_and_move_duplicates()
                 
                 try:
                     results = future.result()
@@ -5560,17 +5888,18 @@ def main():
                                 # Exact duplicate row already exists; skip silently
                                 continue
 
-                            if addr in seen_addresses:
-                                # Address seen before on another site – log as duplicate entry
+                            # Check if address is duplicate in Google Sheet or local processing
+                            if is_duplicate_address(addr, google_addresses, seen_addresses):
+                                # Duplicate found - write to duplicate file with full data
                                 write_to_csv_threadsafe([
-                                    url_r, result['chain'], addr, datetime.utcnow().isoformat()
-                                ], "duplicate_addresses_fast.csv")
-                                print(f"⏭️ [{processed_count}] Duplicate address on new site – recorded in duplicate CSV")
+                                    get_base_domain(url_r), result['title'], result['chain'], addr, result['timestamp'], result['screenshot'], result['categories'], result['description'], result['scam']
+                                ], DUPLICATE_DIVERT_CSV)
+                                print(f"⏭️ [{processed_count}] Duplicate address diverted to {DUPLICATE_DIVERT_CSV}")
                             else:
                                 # Completely new address – write to main CSV
                                 seen_addresses.add(addr)
                                 write_to_csv_threadsafe([
-                                    url_r, result['title'], result['chain'], addr, result['timestamp'], result['screenshot'], result['categories'], result['description'], result['scam']
+                                    get_base_domain(url_r), result['title'], result['chain'], addr, result['timestamp'], result['screenshot'], result['categories'], result['description'], result['scam']
                                 ], OUTPUT_CSV)
                                 print(f"💾 [{processed_count}] Saved new {result['chain']} address to CSV (scam={result['scam']})")
 
@@ -5580,7 +5909,7 @@ def main():
                             
                 except Exception as e:
                     error_count += 1
-                    print(f"❌ [{processed_count}] Error processing {url}: {e}")
+                    print(f"❌ [{processed_count}] Error processing {get_base_domain(url)}: {e}")
         
         # Final statistics
         total_time = (datetime.utcnow() - start_time).total_seconds()
@@ -5611,38 +5940,64 @@ def main():
         cleanup_agent_system()
 
 def create_driver(worker_id=None):
-    """Create an optimized Chrome driver with unique user data directory"""
+    """Create an optimized Chrome driver with unique user data directory and DevTools port"""
+    import tempfile
+    import os
+    import random
+    import time
+    
     chrome_options = Options()
-    if HEADLESS_MODE:
-        chrome_options.add_argument("--headless=new")
+    
+    # macOS-specific fixes
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument(f"--proxy-server={TOR_PROXY}")
+    chrome_options.add_argument("--disable-gpu-sandbox")
+    chrome_options.add_argument("--disable-software-rasterizer")
+    chrome_options.add_argument("--disable-background-timer-throttling")
+    chrome_options.add_argument("--disable-backgrounding-occluded-windows")
+    chrome_options.add_argument("--disable-renderer-backgrounding")
+    chrome_options.add_argument("--disable-features=TranslateUI")
+    chrome_options.add_argument("--disable-ipc-flooding-protection")
+    chrome_options.add_argument("--disable-hang-monitor")
+    chrome_options.add_argument("--disable-prompt-on-repost")
+    chrome_options.add_argument("--disable-field-trial-config")
+    chrome_options.add_argument("--disable-background-networking")
+    chrome_options.add_argument("--disable-default-apps")
+    chrome_options.add_argument("--disable-sync")
+    chrome_options.add_argument("--metrics-recording-only")
+    chrome_options.add_argument("--no-first-run")
+    chrome_options.add_argument("--safebrowsing-disable-auto-update")
+    chrome_options.add_argument("--disable-component-extensions-with-background-pages")
+    chrome_options.add_argument("--disable-background-mode")
+    chrome_options.add_argument("--disable-client-side-phishing-detection")
+    chrome_options.add_argument("--disable-browser-side-navigation")
+    chrome_options.add_argument("--disable-site-isolation-trials")
+    chrome_options.add_argument("--disable-web-security")
+    chrome_options.add_argument("--memory-pressure-off")
+    chrome_options.add_argument("--max_old_space_size=4096")
+    
+    # Performance optimizations
     chrome_options.add_argument("--blink-settings=imagesEnabled=false")
     chrome_options.add_argument("--disable-extensions")
     chrome_options.add_argument("--disable-plugins")
     chrome_options.add_argument("--disable-images")
     chrome_options.add_argument("--disable-css")
     chrome_options.add_argument("--disable-animations")
-    chrome_options.add_argument("--disable-web-security")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-browser-side-navigation")
-    chrome_options.add_argument("--disable-site-isolation-trials")
-    chrome_options.add_argument("--disable-background-timer-throttling")
-    chrome_options.add_argument("--disable-backgrounding-occluded-windows")
-    chrome_options.add_argument("--disable-renderer-backgrounding")
-    chrome_options.add_argument("--disable-field-trial-config")
-    chrome_options.add_argument("--disable-ipc-flooding-protection")
-    chrome_options.add_argument("--memory-pressure-off")
-    chrome_options.add_argument("--max_old_space_size=4096")
-    chrome_options.add_argument("--disable-hang-monitor")
-    chrome_options.add_argument("--disable-prompt-on-repost")
-    chrome_options.add_argument("--disable-features=TranslateUI")
+    
+    # TOR proxy
+    chrome_options.add_argument(f"--proxy-server={TOR_PROXY}")
+    
+    # Headless mode
+    if HEADLESS_MODE:
+        chrome_options.add_argument("--headless=new")
+    
+    # Fix DevTools port conflict by using unique ports
+    devtools_port = random.randint(9222, 9999)
+    chrome_options.add_argument(f"--remote-debugging-port={devtools_port}")
     
     # Add unique user data directory for each worker to prevent conflicts
     if worker_id is not None:
-        import tempfile
-        import os
         # Create a unique temporary directory for this worker
         temp_dir = tempfile.mkdtemp(prefix=f"chrome_worker_{worker_id}_")
         chrome_options.add_argument(f"--user-data-dir={temp_dir}")
@@ -5650,8 +6005,6 @@ def create_driver(worker_id=None):
         chrome_options.add_argument("--no-default-browser-check")
     else:
         # For cases where worker_id is not provided, use a random directory
-        import tempfile
-        import os
         temp_dir = tempfile.mkdtemp(prefix="chrome_worker_")
         chrome_options.add_argument(f"--user-data-dir={temp_dir}")
         chrome_options.add_argument("--no-first-run")
@@ -5660,10 +6013,46 @@ def create_driver(worker_id=None):
     # Enable JavaScript for dynamic address loading
     # chrome_options.add_argument("--disable-javascript")  # Commented out to enable JS
     
-    driver = webdriver.Chrome(options=chrome_options)
-    driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT)
-    driver.set_script_timeout(30)  # Add script timeout to prevent renderer timeouts
-    return driver
+    # Try multiple times with different configurations
+    for attempt in range(3):
+        try:
+            print(f"🔧 Creating Chrome driver (attempt {attempt + 1}/3)...")
+            driver = webdriver.Chrome(options=chrome_options)
+            driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT)
+            driver.set_script_timeout(30)  # Add script timeout to prevent renderer timeouts
+            print(f"✅ Chrome driver created successfully for worker {worker_id}")
+            return driver
+        except Exception as e:
+            print(f"⚠️ Chrome driver creation failed (attempt {attempt + 1}/3): {e}")
+            if attempt < 2:  # Don't sleep on last attempt
+                time.sleep(2)  # Wait before retry
+                # Add more aggressive options for retry
+                chrome_options.add_argument("--disable-dev-shm-usage")
+                chrome_options.add_argument("--disable-gpu-sandbox")
+                chrome_options.add_argument("--disable-software-rasterizer")
+                chrome_options.add_argument("--disable-background-timer-throttling")
+                chrome_options.add_argument("--disable-backgrounding-occluded-windows")
+                chrome_options.add_argument("--disable-renderer-backgrounding")
+    
+    # If all attempts failed, try with minimal options
+    print("🔄 Trying with minimal Chrome options...")
+    minimal_options = Options()
+    minimal_options.add_argument("--no-sandbox")
+    minimal_options.add_argument("--disable-dev-shm-usage")
+    minimal_options.add_argument("--disable-gpu")
+    minimal_options.add_argument(f"--proxy-server={TOR_PROXY}")
+    if HEADLESS_MODE:
+        minimal_options.add_argument("--headless=new")
+    
+    try:
+        driver = webdriver.Chrome(options=minimal_options)
+        driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT)
+        driver.set_script_timeout(30)
+        print(f"✅ Chrome driver created with minimal options for worker {worker_id}")
+        return driver
+    except Exception as e:
+        print(f"❌ Chrome driver creation failed with minimal options: {e}")
+        raise
 
 def get_next_input_file():
     """Get the next input file to process, rotating between primary and secondary"""
@@ -5767,11 +6156,143 @@ def load_urls_from_input_file(input_file, csam_only=False, seen_addresses=None, 
         print(f"❌ Error reading input file {input_file}: {e}")
         return []
 
+def clean_title_for_csv(title, max_length=100):
+    """
+    Clean a title by keeping everything up to the first comma or pipe character to prevent CSV parsing issues.
+    
+    Args:
+        title (str): The original title
+        max_length (int): Maximum length for the title
+    
+    Returns:
+        str: Cleaned title
+    """
+    if not title:
+        return title
+    
+    # Remove quotes if present
+    title = title.strip('"')
+    
+    # Find the first occurrence of problematic characters
+    comma_pos = title.find(',')
+    pipe_pos = title.find('|')
+    
+    # Find the earliest problematic character
+    cut_positions = [pos for pos in [comma_pos, pipe_pos] if pos != -1]
+    
+    if cut_positions:
+        # Keep everything up to (but not including) the earliest problematic character
+        cut_pos = min(cut_positions)
+        title = title[:cut_pos].strip()
+    
+    # Also limit overall length
+    if len(title) > max_length:
+        title = title[:max_length].strip()
+        # Try to cut at a word boundary
+        last_space = title.rfind(' ')
+        if last_space > max_length * 0.8:  # If we can cut at a space and keep most of the title
+            title = title[:last_space].strip()
+    
+    return title
+
+def sanitize_csv_field(field, max_length=1000, field_type="general"):
+    """
+    Sanitize a field for CSV writing by handling quotes, newlines, and other problematic characters.
+    
+    Args:
+        field: The field value to sanitize
+        max_length: Maximum length for the field
+        field_type: Type of field for special handling ("description", "title", "general")
+    
+    Returns:
+        str: Sanitized field value
+    """
+    if field is None:
+        return ""
+    
+    # Convert to string
+    field_str = str(field)
+    
+    # Special handling for description field
+    if field_type == "description":
+        # Remove JavaScript code and problematic content
+        if 'function setCookie' in field_str or 'jQuery.ajax' in field_str:
+            # Extract only the meaningful part before JavaScript
+            parts = field_str.split('function setCookie')
+            if parts[0].strip():
+                field_str = parts[0].strip()
+            else:
+                field_str = 'Content-based description'
+        
+        # Remove other JavaScript patterns
+        js_patterns = [
+            'setInterval(function()',
+            'jQuery.ajax({',
+            'document.cookie',
+            'setCookie(',
+            'var expires',
+            'date.setTime(',
+            'toUTCString()'
+        ]
+        
+        for pattern in js_patterns:
+            if pattern in field_str:
+                parts = field_str.split(pattern)
+                if parts[0].strip():
+                    field_str = parts[0].strip()
+                else:
+                    field_str = 'Content-based description'
+                break
+    
+    # Remove or replace problematic characters
+    # Replace newlines with spaces
+    field_str = field_str.replace('\n', ' ').replace('\r', ' ')
+    
+    # Replace tabs with spaces
+    field_str = field_str.replace('\t', ' ')
+    
+    # Remove null bytes
+    field_str = field_str.replace('\x00', '')
+    
+    # Handle quotes - escape them properly for CSV
+    # If the field contains quotes, we need to escape them by doubling them
+    if '"' in field_str:
+        field_str = field_str.replace('"', '""')
+    
+    # Limit length to prevent extremely long fields
+    if len(field_str) > max_length:
+        field_str = field_str[:max_length].strip()
+        # Try to cut at a word boundary
+        last_space = field_str.rfind(' ')
+        if last_space > max_length * 0.8:
+            field_str = field_str[:last_space].strip()
+    
+    # Remove any remaining control characters except basic whitespace
+    import re
+    field_str = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', field_str)
+    
+    return field_str.strip()
+
 def write_to_csv_threadsafe(row, file):
-    """Thread-safe CSV writing"""
+    """Thread-safe CSV writing with comprehensive data sanitization"""
     with csv_lock:
-        with open(file, 'a', newline='') as f:
-            csv.writer(f).writerow(row)
+        # Create a copy of the row to avoid modifying the original
+        sanitized_row = []
+        
+        for i, field in enumerate(row):
+            if file == OUTPUT_CSV and i == 1:  # Title column (index 1)
+                # Apply special title cleaning for titles
+                cleaned_title = clean_title_for_csv(field)
+                sanitized_row.append(sanitize_csv_field(cleaned_title, max_length=100, field_type="title"))
+            elif file == OUTPUT_CSV and i == 7:  # Description column (index 7)
+                # Apply special description sanitization to remove JavaScript code
+                sanitized_row.append(sanitize_csv_field(field, max_length=500, field_type="description"))
+            else:
+                # Apply general sanitization for all other fields
+                sanitized_row.append(sanitize_csv_field(field, max_length=1000, field_type="general"))
+        
+        with open(file, 'a', newline='', encoding='utf-8') as f:
+            csv.writer(f).writerow(sanitized_row)
 
 def is_multi_vendor_market(url):
     """Check if URL is a known multi-vendor market"""
@@ -5812,7 +6333,7 @@ def should_skip_page(url, title, html):
         "stolen bitcoin wallets", "stolen cryptocurrency wallets", "stolen crypto wallets",
         "stolen bitcoin wallet", "stolen cryptocurrency wallet", "stolen crypto wallet",
         "wallet database", "wallet dump",
-        "wallet leak", "wallet cracker", "wallet hack", "wallet hacker", "wallet hackers", 
+        "wallet leak", "wallet cracker", "wallet hack", "wallet hacker", "wallet hackers" 
         "wallet exploit", "wallet generator", "wallet recovery", "wallet stealer",
         "wallet grabber", "wallet scanner", "wallet brute force",
         
@@ -6531,7 +7052,7 @@ def process_url_with_retry(url, worker_id, max_attempts=None):
             if "ERR_SOCKS_CONNECTION_FAILED" in err_msg or ("net::ERR" in err_msg and "SOCKS" in err_msg):
                 print(f"⚠️ [{worker_id}] Tor connection failed for {url} – skipping (site offline or circuit issue)")
             else:
-                print(f"❌ [{worker_id}] Error processing {url}: {err_msg}")
+                print(f"❌ [{worker_id}] Error processing {get_base_domain(url)}: {err_msg}")
             continue
     
     # Record final failure with context

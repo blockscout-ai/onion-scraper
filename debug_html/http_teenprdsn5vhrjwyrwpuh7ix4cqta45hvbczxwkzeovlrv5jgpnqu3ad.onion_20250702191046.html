@@ -1,0 +1,388 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/public/static/favicon.svg">
+    <link rel="alternate icon" type="image/x-icon" href="/public/static/favicon.ico">
+    <title>Teen Paradise - Sign Up</title>
+    <link rel="stylesheet" href="/public/css/styles.css">
+    <style>
+    /* Scrollbar personnalisée pour Webkit (Chrome, Safari, etc.) */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #1a1a1a;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #4a5568;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #718096;
+    }
+
+    /* Scrollbar personnalisée pour Firefox */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: #4a5568 #1a1a1a;
+    }
+
+    /* Pour assurer que les images de fond couvrent bien */
+    .bg-cover {
+        background-size: cover;
+        background-position: center;
+    }
+
+    /* Animations */
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-5px); }
+        100% { transform: translateY(0px); }
+    }
+
+    @keyframes float-delayed {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-3px); }
+        100% { transform: translateY(0px); }
+    }
+
+    @keyframes pulse-slow {
+        0% { opacity: 0.8; }
+        50% { opacity: 1; }
+        100% { opacity: 0.8; }
+    }
+
+    .animate-float {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    .animate-float-delayed {
+        animation: float-delayed 3s ease-in-out infinite;
+        animation-delay: 0.5s;
+    }
+
+    .animate-pulse-slow {
+        animation: pulse-slow 3s ease-in-out infinite;
+    }
+</style>
+
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+    <style>
+    @keyframes pulse-opacity {
+        0% { opacity: 0.8; }
+        50% { opacity: 1; }
+        100% { opacity: 0.8; }
+    }
+
+    @keyframes float-effect {
+        0% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+        100% { transform: translateY(0); }
+    }
+
+    @keyframes float-delayed-effect {
+        0% { transform: translateY(0); }
+        50% { transform: translateY(-3px); }
+        100% { transform: translateY(0); }
+    }
+
+    .animate-pulse-opacity {
+        animation: pulse-opacity 3s ease-in-out infinite;
+    }
+
+    .animate-float-effect {
+        animation: float-effect 3s ease-in-out infinite;
+    }
+
+    .animate-float-delayed-effect {
+        animation: float-delayed-effect 3s ease-in-out infinite;
+        animation-delay: 0.5s;
+    }
+</style>
+
+<header class="bg-gray-800 shadow-lg fixed w-full top-0 z-50">
+    <nav class="container mx-auto px-4 sm:px-6 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <!-- Logo -->
+                <a href="/" class="flex items-center space-x-2">
+                    <div class="w-8 sm:w-10 h-8 sm:h-10 flex-shrink-0">
+                        <svg class="w-full h-full" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Fond du logo -->
+                            <circle cx="25" cy="25" r="25" fill="#FF69B4" class="animate-pulse-opacity"></circle>
+                            
+                            <!-- Cœurs décoratifs -->
+                            <g class="animate-float-effect">
+                                <!-- Cœur principal -->
+                                <path d="M25 15C23.5 12 20 10 17 10C12.5 10 10 13.5 10 17.5C10 25 25 35 25 35C25 35 40 25 40 17.5C40 13.5 37.5 10 33 10C30 10 26.5 12 25 15Z" fill="#FFF" opacity="0.9"></path>
+                                
+                                <!-- Petits cœurs décoratifs -->
+                                <g transform="translate(10, 35) rotate(-15)">
+                                    <path d="M0 0C-0.5 -1 -2 -2 -3 -2C-4.5 -2 -6 -1 -6 1C-6 3 0 7 0 7C0 7 6 3 6 1C6 -1 4.5 -2 3 -2C2 -2 0.5 -1 0 0Z" fill="#FFB6C1" class="animate-float-delayed-effect"></path>
+                                </g>
+                                
+                                <g transform="translate(40, 35) rotate(15)">
+                                    <path d="M0 0C-0.5 -1 -2 -2 -3 -2C-4.5 -2 -6 -1 -6 1C-6 3 0 7 0 7C0 7 6 3 6 1C6 -1 4.5 -2 3 -2C2 -2 0.5 -1 0 0Z" fill="#FFB6C1" class="animate-float-delayed-effect"></path>
+                                </g>
+                            </g>
+                            
+                            <!-- Texte "TP" -->
+                            <text x="50%" y="65%" text-anchor="middle" dominant-baseline="middle" fill="#4B0082" class="font-bold text-xl" style="font-family: cursive;">
+                                TP
+                            </text>
+                        </svg>
+                    </div>
+                    <span class="text-lg sm:text-xl font-bold text-white hidden sm:inline" style="font-family: cursive;">Teen Paradise</span>
+                    <span class="text-lg sm:text-xl font-bold text-white sm:hidden" style="font-family: cursive;">TP</span>
+                </a>
+
+                <!-- Navigation Desktop -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <a href="/" class="text-gray-300 hover:text-white transition-colors" title="Home">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                    </a>
+                    <a href="/videos" class="text-gray-300 hover:text-white transition-colors">Videos</a>
+                    <a href="/images" class="text-gray-300 hover:text-white transition-colors">Images</a>
+                    <a href="/forum" class="text-gray-300 hover:text-white transition-colors">Forum</a>
+                    <a href="/faq" class="text-gray-300 hover:text-white transition-colors">FAQ</a>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <!-- Compteurs -->
+                
+                
+
+                <!-- Auth -->
+                
+                    <div class="flex items-center space-x-4">
+                        <a href="/login" class="text-gray-300 hover:text-white transition-colors">Login</a>
+                        <a href="/signup" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">Sign Up</a>
+                    </div>
+                
+
+                <!-- Menu Mobile -->
+                <button id="mobile-menu-button" class="md:hidden text-gray-300 hover:text-white focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Menu mobile -->
+        <div id="mobile-menu" class="hidden md:hidden mt-4">
+            <div class="flex flex-col space-y-2 pb-3">
+                <a href="/" class="text-gray-300 hover:text-white transition-colors px-2 py-1" title="Home">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                </a>
+                <a href="/videos" class="text-gray-300 hover:text-white transition-colors px-2 py-1">Videos</a>
+                <a href="/images" class="text-gray-300 hover:text-white transition-colors px-2 py-1">Images</a>
+                <a href="/forum" class="text-gray-300 hover:text-white transition-colors px-2 py-1">Forum</a>
+                <a href="/faq" class="text-gray-300 hover:text-white transition-colors px-2 py-1">FAQ</a>
+                
+                
+                    <div class="border-t border-gray-700 mt-2 pt-2">
+                        <a href="/login" class="block text-gray-300 hover:text-white transition-colors px-2 py-1">Login</a>
+                        <a href="/signup" class="block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors mx-2 mt-2">Sign Up</a>
+                    </div>
+                
+            </div>
+        </div>
+    </nav>
+</header>
+
+<div class="h-16 sm:h-20"></div>
+
+<script>
+    document.getElementById('mobile-menu-button').addEventListener('click', function() {
+        document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+</script>
+
+
+    <div class="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            <div>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-white">
+                    Create your account
+                </h2>
+                <p class="mt-2 text-center text-sm text-gray-400">
+                    Join our community today
+                </p>
+            </div>
+
+            <div class="bg-gray-800 rounded-xl p-8">
+                <form class="space-y-6" action="/signup" method="POST">
+                    <input type="hidden" name="captchaId" value="598cabc02bbaba29ace865e24e5b631e">
+                    
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-300">
+                            Username
+                        </label>
+                        <div class="mt-1">
+                            <input id="username" name="username" type="text" required="" class="h-12 appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-700 
+                                bg-gray-700 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 
+                                focus:ring-indigo-500 focus:border-transparent">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-300">
+                            Email (optional)
+                        </label>
+                        <div class="mt-1">
+                            <input id="email" name="email" type="email" class="h-12 appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-700 
+                                bg-gray-700 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 
+                                focus:ring-indigo-500 focus:border-transparent" placeholder="your@email.com">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-300">
+                            Password
+                        </label>
+                        <div class="mt-1">
+                            <input id="password" name="password" type="password" required="" class="h-12 appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-700 
+                                bg-gray-700 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 
+                                focus:ring-indigo-500 focus:border-transparent">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="confirm_password" class="block text-sm font-medium text-gray-300">
+                            Confirm Password
+                        </label>
+                        <div class="mt-1">
+                            <input id="confirm_password" name="confirm_password" type="password" required="" class="h-12 appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-700 
+                                bg-gray-700 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 
+                                focus:ring-indigo-500 focus:border-transparent">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="captcha" class="block text-sm font-medium text-gray-300">
+                            Captcha: 
+                            <span class="captcha-container relative inline-block" style="display: none;">
+                                <span class="real-captcha" style="display: none;">1 + 17 = ?</span>
+                                <span class="fake-captcha absolute top-0 left-0 select-none" aria-hidden="true" style="display: none;">
+                                    qcm9hf
+                                </span>
+                            </span>
+                        </label>
+                        <div class="mt-1">
+                            <input id="captcha" name="captcha" type="text" required="" class="h-12 appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-700 
+                                bg-gray-700 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 
+                                focus:ring-indigo-500 focus:border-transparent" placeholder="Enter the result" style="display: none;">
+                        </div>
+                    </div>
+
+                    
+                        <div class="text-red-500 text-sm">
+                            Invalid captcha. Please try again.
+                        </div>
+                    
+
+                    <div>
+                        <button type="submit" class="h-12 w-full flex justify-center py-2 px-4 border border-transparent rounded-lg 
+                            shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 
+                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Create Account
+                        </button>
+                    </div>
+
+                    <div class="mt-6">
+                        <div class="relative">
+                            <div class="absolute inset-0 flex items-center">
+                                <div class="w-full border-t border-gray-700"></div>
+                            </div>
+                            <div class="relative flex justify-center text-sm">
+                                <span class="px-2 bg-gray-800 text-gray-400">
+                                    Already have an account?
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <a href="/login" class="h-12 w-full flex justify-center py-2 px-4 border border-gray-700 rounded-lg 
+                                shadow-sm text-lg font-medium text-gray-200 bg-gray-700 hover:bg-gray-600 
+                                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                Sign in to your account
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-800 mt-12">
+    <div class="container mx-auto px-6 py-4">
+        <p class="text-center text-gray-400">
+            © 2025 Teen Paradise
+            
+            
+        </p>
+    </div>
+</footer>
+
+
+<style>
+    .captcha-container {
+        display: inline-block;
+        position: relative;
+    }
+    .real-captcha {
+        position: relative;
+        z-index: 2;
+        background: linear-gradient(45deg, #4f46e5, #818cf8);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        font-family: monospace;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        letter-spacing: 2px;
+    }
+    .fake-captcha {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        opacity: 0.1;
+        color: #fff;
+        transform: skew(-10deg);
+        pointer-events: none;
+    }
+    /* Styles anti-bot */
+    @media screen and (max-resolution: 1dpi) {
+        .real-captcha {
+            display: none;
+        }
+        .fake-captcha {
+            opacity: 1;
+        }
+    }
+    @media print {
+        .real-captcha {
+            display: none;
+        }
+    }
+    @media (prefers-reduced-motion) {
+        .real-captcha {
+            animation: none;
+        }
+    }
+</style>
+
+
+</body></html>
