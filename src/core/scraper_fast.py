@@ -114,6 +114,28 @@ def fill_visible_inputs_anywhere(driver, data_dict=None):
     print(f"[fill_visible_inputs_anywhere] Total fields filled: {fields_filled}")
     return fields_filled
 
+def try_click_join_button(driver):
+    """Try to find and click a button or link with text 'JOIN' (case-insensitive)"""
+    from selenium.webdriver.common.by import By
+    import time
+    join_selectors = [
+        "//button[contains(translate(text(), 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 'JOIN')]",
+        "//a[contains(translate(text(), 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 'JOIN')]",
+        "//div[contains(translate(text(), 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 'JOIN')]"
+    ]
+    for selector in join_selectors:
+        try:
+            elems = driver.find_elements(By.XPATH, selector)
+            for elem in elems:
+                if elem.is_displayed() and elem.is_enabled():
+                    elem.click()
+                    print("✅ [JOIN Fallback] Clicked JOIN button/link.")
+                    time.sleep(2)
+                    return True
+        except Exception as e:
+            print(f"[JOIN Fallback] JOIN click failed: {e}")
+    return False
+
 # === AGENT SYSTEM INTEGRATION ===
 import sys
 import os
@@ -8741,6 +8763,14 @@ def try_handle_generic_email_modal_with_retries(driver, worker_id, context):
     else:
         print(f"❌ [Modal Retry Handler] No visible input fields were filled.")
     
+    # NEW: Try clicking JOIN button as a last fallback
+    print(f"🔄 [Modal Retry Handler] Attempting to click JOIN button as last fallback...")
+    if try_click_join_button(driver):
+        print(f"✅ [Modal Retry Handler] JOIN button clicked as fallback.")
+        return True
+    else:
+        print(f"❌ [Modal Retry Handler] JOIN button not found or not clickable.")
+
     print(f"❌ [Modal Retry Handler] All modal handling attempts failed for context: {context}")
     return False
 
