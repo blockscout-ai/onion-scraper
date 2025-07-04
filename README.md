@@ -1,159 +1,269 @@
-# Onion Discovery Tool
+# Onion Scraper 2
 
-A comprehensive tool for discovering onion URLs through keyword-based search and crawling.
+A comprehensive system for discovering, scraping, and analyzing onion sites with advanced AI/ML capabilities for content classification and cryptocurrency address extraction.
 
-## Features
-
-- **Keyword Search**: Searches multiple Tor search engines using predefined keywords
-- **Deep Crawling**: Crawls discovered onion sites to find additional links
-- **Cryptocurrency Detection**: Extracts cryptocurrency addresses from discovered sites
-- **Progress Tracking**: Saves progress and allows resuming interrupted crawls
-- **Tor Integration**: Uses Tor SOCKS proxy for anonymous browsing
-- **Threading**: Multi-threaded crawling for improved performance
-
-## Usage
-
-### Basic Usage
+## 🚀 Quick Start
 
 ```bash
-# Start a new crawl with keyword search
-python onion_discovery.py
+# Run the main scraper
+python run.py scraper --resume --verbose
+
+# Discover new onion sites
+python run.py discovery --no-search
+
+# Start the API server
+python run.py api --port 8000
+
+# Check for duplicates in your data
+python run.py utils check-duplicates
+```
+
+## 📁 Project Structure
+
+The project has been organized for easy navigation and maintenance:
+
+```
+onion_scraper_2/
+├── run.py                    # 🎯 Main entry point - start here!
+├── src/                      # Source code
+│   ├── core/                 # Core scraping functionality
+│   ├── agents/               # AI/ML agents
+│   ├── discovery/            # Onion discovery tools
+│   ├── analysis/             # Content analysis
+│   ├── utils/                # Utility functions
+│   ├── api/                  # API server
+│   └── frontend/             # Frontend files
+├── data/                     # Data files
+│   ├── raw/                  # Raw data (CSVs, screenshots)
+│   ├── processed/            # Processed data (JSONs)
+│   └── archives/             # Historical data
+├── config/                   # Configuration files
+├── logs/                     # Log files
+├── docs/                     # Documentation
+├── scripts/                  # Utility scripts
+└── tests/                    # Test files
+```
+
+## 🎯 Main Features
+
+### Core Functionality
+- **High-performance scraping** with parallel processing
+- **Intelligent onion discovery** using search engines and crawling
+- **Content classification** for CSAM, trafficking, and scam detection
+- **Cryptocurrency address extraction** from multiple chains
+- **Screenshot capture** for visual analysis
+
+### AI/ML Capabilities
+- **Learning agents** that improve over time
+- **Pattern recognition** for transaction analysis
+- **Content signature analysis** for classification
+- **Smart interaction handling** for complex sites
+
+### Data Management
+- **Google Drive integration** for data storage
+- **Automated backups** and archiving
+- **Duplicate detection** and cleanup
+- **Data validation** and quality checks
+
+## 📖 Documentation
+
+- **[Quick Start Guide](docs/QUICK_START.md)** - Get up and running fast
+- **[Project Structure](docs/PROJECT_STRUCTURE.md)** - Detailed structure explanation
+- **[API Documentation](src/frontend/FRONTEND_README.md)** - API usage guide
+
+## 🛠️ Installation
+
+1. **Install dependencies**
+   ```bash
+   pip install -r config/requirements.txt
+   ```
+
+2. **Set up environment**
+   ```bash
+   cp config/.env.example config/.env
+   # Edit config/.env with your settings
+   ```
+
+3. **Start Tor service**
+   ```bash
+   tor
+   ```
+
+## 🚀 Usage Examples
+
+### Basic Scraping
+```bash
+# Run the main scraper
+python run.py scraper
 
 # Resume from where you left off
-python onion_discovery.py --resume
+python run.py scraper --resume
 
-# Skip keyword search and only crawl seed URLs
-python onion_discovery.py --no-search
-
-# Verbose logging
-python onion_discovery.py --verbose
-
-# Quiet mode (minimal output)
-python onion_discovery.py --quiet
+# Verbose output for debugging
+python run.py scraper --verbose
 ```
 
-### Command Line Options
+### Discovery
+```bash
+# Discover new onion sites
+python run.py discovery
 
-- `--resume`: Resume from a previous crawl session
-- `--no-search`: Skip the keyword search phase and only crawl seed URLs
-- `--verbose`: Enable detailed logging
-- `--quiet`: Enable minimal logging (warnings and errors only)
+# Skip keyword search (faster)
+python run.py discovery --no-search
+```
 
-## Temporary File Management
+### API Server
+```bash
+# Start API server
+python run.py api
 
-To prevent codebase clutter from temporary fix scripts, tests, and one-time use files, use the built-in temporary file management system:
+# Custom port
+python run.py api --port 8080
 
-### Creating Temporary Scripts
+# Debug mode
+python run.py api --debug
+```
 
+### Utilities
+```bash
+# Check for duplicate addresses
+python run.py utils check-duplicates
+
+# Check address coverage
+python run.py utils check-coverage
+
+# Clean CSV URLs
+python run.py utils clean-urls
+```
+
+### Maintenance
+```bash
+# Optimize AI agents
+python run.py maintenance optimize-agents
+
+# Clean up unused code
+python run.py maintenance cleanup-code
+
+# Fix Google Drive issues
+python run.py maintenance fix-trash
+```
+
+### Google Drive Integration
+```bash
+# Upload screenshots
+python run.py utilities upload-screenshots
+
+# Manage Google Drive
+python run.py utilities gdrive-manager
+
+# Test Google Sheets
+python run.py utilities test-sheets
+```
+
+## 📊 Data Organization
+
+### Raw Data (`data/raw/`)
+- CSV files with scraped data
+- Screenshot images
+- Debug HTML files
+- Captcha images
+
+### Processed Data (`data/processed/`)
+- JSON files with processed data
+- Knowledge bases
+- Learning patterns
+- Configuration files
+
+### Logs (`logs/`)
+- Debug logs: `logs/debug/`
+- Error logs: `logs/errors/`
+- Progress logs: `logs/progress/`
+
+## ⚙️ Configuration
+
+### Main Settings (`config/settings.py`)
 ```python
-from temp_file_manager import create_temp_script
+# Tor configuration
+TOR_SOCKS_PROXY = 'socks5h://127.0.0.1:9050'
+TOR_CONTROL_PORT = 9051
 
-# Create a temporary script that auto-deletes after 24 hours
-script_path = create_temp_script(
-    name="quick_fix", 
-    content="""
-import pandas as pd
-# Your temporary code here
-print("This script will auto-delete!")
-""",
-    hours=24
-)
+# Scraping settings
+MAX_WORKERS = 15
+SLEEP_BETWEEN_REQUESTS = (2, 8)
+MAX_DEPTH = 4
 ```
 
-### Command Line Usage
+### Environment Variables (`config/.env`)
+```bash
+TOR_CONTROL_PASSWORD=your_password
+GOOGLE_DRIVE_FOLDER_ID=your_folder_id
+API_HOST=localhost
+API_PORT=8000
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **Tor connection failed**
+   - Ensure Tor service is running
+   - Check `config/settings.py` for correct proxy settings
+
+2. **Import errors**
+   - Make sure you're in the project root directory
+   - Install dependencies: `pip install -r config/requirements.txt`
+
+3. **File not found**
+   - Check if files were moved to new locations
+   - Use `config/settings.py` for file paths
+
+### Getting Help
+
+1. **Check logs**: Look in `logs/` directory
+2. **Review documentation**: See `docs/` directory
+3. **Check configuration**: Verify `config/settings.py`
+
+## 🧪 Testing
 
 ```bash
-# Create a new temporary script
-python temp_file_manager.py create my_test_script
+# Run unit tests
+python -m pytest tests/unit/
 
-# List all tracked temporary files
-python temp_file_manager.py list
-
-# Clean up expired files
-python temp_file_manager.py cleanup
-
-# Mark an existing file for automatic cleanup
-python temp_file_manager.py mark old_script.py 2  # cleanup in 2 hours
+# Run integration tests
+python -m pytest tests/integration/
 ```
 
-### Features
+## 📈 Performance
 
-- **Auto-cleanup**: Files automatically delete after expiration
-- **Tracking**: Registry tracks all temporary files with metadata
-- **Extensions**: Can extend file lifetime if needed
-- **Safe patterns**: Files stored in `temp_files/` directory
-- **Git-ignored**: Temporary files won't be committed to version control
+- **Parallel processing** with configurable worker count
+- **Smart rate limiting** to avoid detection
+- **Memory management** with automatic cleanup
+- **Disk space monitoring** to prevent overflow
 
-### Best Practices
+## 🔒 Security
 
-1. **Always use for temporary work**: Any script that's not permanent core functionality
-2. **Set appropriate lifetimes**: Short for debugging, longer for ongoing work
-3. **Clean regularly**: Run `python temp_file_manager.py cleanup` periodically
-4. **Meaningful names**: Use descriptive names for easier tracking
+- **Tor integration** for anonymous access
+- **Content filtering** for sensitive material
+- **Encrypted storage** options
+- **Access control** for API endpoints
 
-## How It Works
+## 🤝 Contributing
 
-### Phase 1: Keyword Search
-The tool first searches each keyword on each configured search engine:
-- Haystak
-- Metagerv
-- Narcoo
-- On62jjk
-- Tor66
-- Iy3544
-- Uquroy
+1. Follow the project structure
+2. Add tests for new features
+3. Update documentation
+4. Use the centralized configuration
 
-This phase discovers initial onion URLs that match the search criteria.
+## 📄 License
 
-### Phase 2: Deep Crawling
-The tool then crawls all discovered URLs (from both keyword search and seed URLs) to find additional onion links.
+This project is for law enforcement and research purposes only.
 
-### Output Files
+## 🆘 Support
 
-- `discovered_onions_YYYYMMDD.csv`: All discovered onion URLs with metadata
-- `crypto_addresses_YYYYMMDD.csv`: Cryptocurrency addresses found on sites
-- `crawler_log_YYYYMMDD_HHMMSS.log`: Detailed log file
-- `crawler_progress.json`: Progress tracking for resuming
-- `max_depth_urls_YYYYMMDD_HHMMSS.txt`: URLs at maximum depth for deeper crawling
+- Check `docs/` for detailed documentation
+- Review `logs/` for error information
+- Use `scripts/maintenance/` for troubleshooting tools
 
-## Configuration
+---
 
-### Search Engines
-Search engine URL patterns are defined in `SEARCH_ENGINE_PATTERNS`. The tool tries primary patterns first, then falls back to alternative patterns if needed.
-
-### Keywords
-Keywords are defined in the `KEYWORDS` list. These are used to search for relevant onion sites.
-
-### Crawling Settings
-- `MAX_DEPTH`: Maximum crawl depth (default: 4)
-- `MAX_WORKERS`: Number of concurrent threads (default: 15)
-- `SLEEP_BETWEEN_REQUESTS`: Random sleep between requests (default: 2-8 seconds)
-- `ROTATE_EVERY_N`: Rotate Tor identity every N requests (default: 25)
-
-## Testing
-
-Run the test script to verify the keyword search functionality:
-
-```bash
-python test_keyword_search.py
-```
-
-## Requirements
-
-- Python 3.6+
-- Tor running on localhost:9050
-- Required Python packages (install via pip):
-  - requests
-  - beautifulsoup4
-  - urllib3
-
-## Security Notes
-
-- Always use this tool through Tor for anonymity
-- The tool includes keywords related to illegal content for research purposes
-- Use responsibly and in accordance with local laws
-- Consider the ethical implications of automated crawling
-
-## Disclaimer
-
-This tool is for research and educational purposes only. Users are responsible for complying with all applicable laws and regulations. The authors are not responsible for any misuse of this tool. 
+**🎯 Start with `python run.py help` to see all available commands!** 

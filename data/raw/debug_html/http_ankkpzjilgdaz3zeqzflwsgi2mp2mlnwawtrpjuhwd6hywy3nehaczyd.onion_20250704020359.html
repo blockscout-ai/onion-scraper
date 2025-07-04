@@ -1,0 +1,193 @@
+<html lang="en"><head></head><body><p class="message">All fields are required.</p>
+
+
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pmart Registration</title>
+    <style>
+   .message {
+    color: #fff;
+}
+.message a {
+    color: #fff;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #0d0d0d;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+.container {
+    background-color: #171717;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+    width: 340px;
+    color: #fff;
+}
+
+.container label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+.container input,
+.container select {
+    width: 95%;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    border: 1px solid #333;
+    border-radius: 30px;
+    background-color: #1f1f1f;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s, background-color 0.3s;
+}
+
+.container input:focus,
+.container select:focus {
+    border-color: #4f46e5;
+    background-color: #262626;
+}
+
+.container button {
+    background-color: #4f46e5;
+    color: #fff;
+    padding: 14px;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+}
+
+.container button:hover {
+    background-color: #3730a3;
+}
+
+#holder {
+    position: relative;
+}
+
+#pass_me {
+    position: absolute;
+    top: 38px;
+    right: 20px;
+    font-size: 13px;
+    color: #9f7aea;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#register_vends {
+    margin: 10px;
+    text-decoration: underline;
+    color: #fff;
+}
+
+@media screen and (max-width: 700px) {
+    body {
+        background: #0d0d0d;
+    }
+    .container {
+        box-shadow: none;
+        width: 90%;
+    }
+}
+
+    </style>
+
+
+
+    <div class="container">
+        <h2>Peoples Mart <br>Register With Us</h2>
+        <form action="register.php" method="post">
+            <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" class="form-control" placeholder="username" name="username">
+</div>
+    <div class="form-group" id="holder">
+    <label for="password">Password:</label>
+            <input type="password" class="form-control" placeholder="password" name="password" id="pass_code">
+            <a href="#" id="pass_me">Show</a>
+</div>
+
+    <!-- <div class="form-group" id="holder">
+    <label for="invitation">Invitation Code:</label>
+            <input type="text" class= "form-control"  placeholder="invitation code" name="invitation" id="invitation_code">
+            
+</div>		-->	
+
+<div class="form-group">
+    <label for="region">Region:</label>
+    <select class="form-control" name="region">
+        <option value="" selected="" disabled="">Select Region</option>
+      <option value="Asia">Asia</option>
+    <option value="Africa">Africa</option>
+    <option value="North America">North America</option>
+    <option value="South America">South America</option>
+    <option value="Antarctica">Antarctica</option>
+    <option value="Europe">Europe</option>
+    <option value="Australia">Australia</option>
+    </select>
+</div>
+            <!-- <div class="form-group">
+            <label for="email">Session App ID:</label>
+            <input type="text" class= "form-control" placeholder="Session ID:" name="email">
+</div> -->
+
+<div class="form-group">
+    <label for="email">Communicate via:</label>
+    <select class="form-control" name="email">
+       <option value="" selected="" disabled="">Select Method</option>
+      <option value="Email">Email</option>
+    <!-- <option value="Telegram">Telegram</option> -->
+    <option value="Session">Session</option>
+    </select>
+</div>
+
+<!-- <div class="form-group">
+    <label for="finder">How Did You Find Us?:</label>
+    <select class="form-control" name="finder">
+        <option value="" selected disabled>Select How?</option>
+      <option value="Dark Web">Dark web forum or discussion board</option>
+    <option value="Referral">Referral from a trusted contact</option>
+  <option value="Hidden Wiki">Hidden Wiki or directory listing</option>
+    <option value="Search Engine">Dark web search engine</option>
+ <option value="Returning Visitor">Returning visitor</option>
+    </select>
+</div> -->
+            <button type="submit">Register</button><br>
+            
+           <!-- <div class="form-group" style="margin-top: 30px;">
+               <span style="font-weight: bolder;">Don't Have Session App?<a href="session.html" id="register_vends">Click Here</a></span><br> -->
+            </form></div>
+        
+    
+
+    <script>
+        let pass_me = document.querySelector('#pass_me');
+        let input_pass = document.getElementById("pass_code");
+        
+        pass_me.addEventListener('click', () => {
+            if(pass_me.innerText == "Show"){
+                input_pass.type = "text";
+                pass_me.innerText = "Hide";
+            }else{
+                input_pass.type = "password";
+                pass_me.innerText = "Show";
+            }
+        });
+    </script>
+
+</body></html>

@@ -1,0 +1,251 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <title>ASAP .ONION DIRECTORY</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <!-- Animate.css for animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #333;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            margin-top: 40px;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-weight: 700;
+            color: #28394d;
+            text-align: center;
+        }
+
+        /* Glittering Logo */
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 24px;
+            color: #28394d !important;
+            background: linear-gradient(45deg, #ff9a9e, #fad0c4, #fbc2eb, #a6c1ee, #a1c4fd, #c2e9fb);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glitter 4s ease-in-out infinite;
+        }
+
+        @keyframes glitter {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Table Styles */
+        .table {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            border: none;
+        }
+
+        .table thead th {
+            background-color: #28394d;
+            color: #fff;
+            text-align: center;
+            font-weight: 600;
+            padding: 16px;
+            border: none;
+        }
+
+        .table tbody tr {
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(240, 240, 240, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .table tbody td {
+            vertical-align: middle;
+            text-align: center;
+            padding: 12px;
+            border: none;
+        }
+
+        .table img {
+            max-width: 150px;
+            height: auto;
+            border-radius: 8px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .table img:hover {
+            transform: scale(2) translateX(-25%);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Buttons */
+        .btn-primary, .btn-secondary {
+            margin-bottom: 20px;
+            font-weight: 500;
+            border-radius: 8px;
+            padding: 10px 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn-primary:hover, .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 10px 0;
+        }
+
+        .navbar-toggler {
+            border: none;
+        }
+
+        .navbar-toggler:focus {
+            outline: none;
+        }
+
+        /* Search Bar */
+        .form-control {
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .form-control:focus {
+            border-color: #28394d;
+            box-shadow: none;
+        }
+
+        /* Pagination */
+        .pagination .page-item .page-link {
+            border-radius: 8px;
+            margin: 0 4px;
+            color: #28394d;
+            border: none;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: #28394d;
+            color: #fff;
+        }
+
+        .pagination .page-item .page-link:hover {
+            background-color: rgba(240, 240, 240, 0.8);
+        }
+
+        /* Floating Action Button (FAB) */
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #28394d;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Smooth Scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Action Button (FAB) -->
+    <button class="fab" onclick="scrollToTop()">↑</button>
+
+    <!-- Navbar with Glittering Logo -->
+    <nav class="navbar navbar-expand-lg navbar-light mb-0">
+        <div class="container">
+            <a class="navbar-brand" href="index.php">✨ ASAP .ONION DIRECTORY ✨</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav">
+                </ul>
+                <form class="form-inline my-2 my-lg-0" method="get" action="">
+                    <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" name="search">
+                    <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+                </form>
+            </div>
+        </div>
+    </nav>  
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Link</th>
+                        <th>Title and Description</th>
+                        <th>Screenshot</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://ppcentvcgdioqya5cb3ctcddvpny4ntuxmnrm5wl6kyjjqqkaamfmmid.onion" target="_blank">ppcentvcgdioqya5cb3ctcddvpny4ntuxmnrm5wl6kyjjqqkaamfmmid.onion</a></td><td><strong>The PayPal Cent</strong><br>- A working Paypal Account with balance
+- A matching socks5 proxy
+-  instructions how to cashout</td><td><img src="/images/tor_screenshot_648bb2d14cf5e7ace23863dc7a657d97.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://4m2pasvwx5jux7heojpzrq6mlrzug5m7u23cs5hf4bswtgapwkdpcayd.onion" target="_blank">4m2pasvwx5jux7heojpzrq6mlrzug5m7u23cs5hf4bswtgapwkdpcayd.onion</a></td><td><strong>VendorCC!</strong><br>The High Quality Credit Card Dump Shop.</td><td><img src="/images/tor_screenshot_fb9a9ca71160220196ec650613e137c3.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://bankulopivxxjsz3tbkmyzm2xwvabvj7d3kti6cvz2zz5x3u57mhdpid.onion" target="_blank">bankulopivxxjsz3tbkmyzm2xwvabvj7d3kti6cvz2zz5x3u57mhdpid.onion</a></td><td><strong>Bankor |  Best Carding Services</strong><br>Prepaid / Cloned Credit Cards and Money Transfers via PayPal or Western Union</td><td><img src="/images/tor_screenshot_80f6623b6472e61b90c9e0ed20e41732.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://uriuoiil5pxnjg3njkxmcniapzzon3tvcdlllio3hvj2kdn4xouj64id.onion" target="_blank">uriuoiil5pxnjg3njkxmcniapzzon3tvcdlllio3hvj2kdn4xouj64id.onion</a></td><td><strong>Dirty Bitcoin Wallets Shop Buy stolen bitcoins for a fraction of the balance</strong><br>Stolen Bitcoin Wallets shop
+Trusted Vendor</td><td><img src="/images/tor_screenshot_935b087a9795d0eab0b249e6c3255334.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://fixedxxcfg6r3bnaactjmzgqq2omjoen2eiv5wlviztgccmz4gehpdad.onion" target="_blank">fixedxxcfg6r3bnaactjmzgqq2omjoen2eiv5wlviztgccmz4gehpdad.onion</a></td><td><strong>Fixed Matches Best Inside</strong><br>fixed football matches with high odds at low prices. We have been working since 2016 and have a lot </td><td><img src="/images/tor_screenshot_416ea15c339b410d81b9d05ab24bc2f7.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://zb3igvpvar2aanem6z6s7dezdgsocvd7yqdno7mgyjk3ndtrdjchyzad.onion" target="_blank">zb3igvpvar2aanem6z6s7dezdgsocvd7yqdno7mgyjk3ndtrdjchyzad.onion</a></td><td><strong>ecash Cards [Since 2017]</strong><br>Cards PayPal Western Union
+Samples availabe</td><td><img src="/images/tor_screenshot_23fc932923d5e1fa823c75e56ad09cfb.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://walletux2klacxuxwxtfs5lesncixox3srzolosex2fyqlxsvu6bvhad.onion" target="_blank">walletux2klacxuxwxtfs5lesncixox3srzolosex2fyqlxsvu6bvhad.onion</a></td><td><strong>Hidden Bitcoin Wallet </strong><br>A Secure Cold storage Bitcoin Wallet with In built Crypto Mixer/Tumbler 
+since 2014 No KYC</td><td><img src="/images/tor_screenshot_befda738bf989267e6a656dad7048812.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://ppppps4kxvomg6xqifwip6mzcjt6zwbxdub4ac44whngr4hvusdqnoqd.onion" target="_blank">ppppps4kxvomg6xqifwip6mzcjt6zwbxdub4ac44whngr4hvusdqnoqd.onion</a></td><td><strong>CCardshop Hacked PayPal Accounts</strong><br>Buy Hacked PayPal Accounts at low prices</td><td><img src="/images/tor_screenshot_12bbaf62a25e24c2d2f9f3a96ca2fa60.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://pathfi6tv5rndtjpzbzn5xd2tvrpwheyuedbdzmdj22ztqqlievy2jqd.onion" target="_blank">pathfi6tv5rndtjpzbzn5xd2tvrpwheyuedbdzmdj22ztqqlievy2jqd.onion</a></td><td><strong>Pathfinder RAT for Android and iOS</strong><br>Hack any smartphone! Intercept MMS/SMS, WhatsApp, Facebook Messenger, Telegram, Chats. Watch via cam</td><td><img src="/images/tor_screenshot_03a0e1e6421a9de994917d01ab8e1709.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://amazone4wpxmsj5cjvn57arzpwncufddgqjk62c2cm34lawnl2lpe4qd.onion" target="_blank">amazone4wpxmsj5cjvn57arzpwncufddgqjk62c2cm34lawnl2lpe4qd.onion</a></td><td><strong>Amazon Gift Cards</strong><br>Now up to 70% off</td><td><img src="/images/tor_screenshot_8bedc3019a90ccf1abe9cae908742aa3.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://hbfkm3227ktso5ni4royouhmwhwovt2dakks5jp7gaj6xincy3yju6qd.onion" target="_blank">hbfkm3227ktso5ni4royouhmwhwovt2dakks5jp7gaj6xincy3yju6qd.onion</a></td><td><strong>Torex Search</strong><br>Search Onions, Torrents,</td><td><img src="/images/tor_screenshot_80e6391d18859fcde17efd92f94ed59c.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://minerymjtahkqm54w6gtfhgi44l2zj3aizprpxmhrn2jbp6cbf4erzyd.onion" target="_blank">minerymjtahkqm54w6gtfhgi44l2zj3aizprpxmhrn2jbp6cbf4erzyd.onion</a></td><td><strong>Bitcoin Miner</strong><br>Try your Luck</td><td><img src="/images/tor_screenshot_9d3b250eb7b1c20f32632ac6a52c5b5d.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://videos3q7ez4z7ylyzlyy4beoshhwrmbo6gnnmiew3rj7j2tzlc4xyyd.onion" target="_blank">videos3q7ez4z7ylyzlyy4beoshhwrmbo6gnnmiew3rj7j2tzlc4xyyd.onion</a></td><td><strong>Porn Video`s</strong><br>CP Archive</td><td><img src="/images/tor_screenshot_c06b2b920be6887c869a23644826041c.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://pornm5ul7ssqkfkvgrw2vxq5picflbtv7iv5p3b4bsi6bjwedm5rzgqd.onion" target="_blank">pornm5ul7ssqkfkvgrw2vxq5picflbtv7iv5p3b4bsi6bjwedm5rzgqd.onion</a></td><td><strong>PTSH porn</strong><br>+55,000 Pedo Torture Secret Hard Porn</td><td><img src="/images/tor_screenshot_8c0d85b258c6ffa2eb3d5afb3000c56a.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://tpornxvemr4hy37awgysltfrnzca63vtf46h33kyd5by6mrqz47pdmqd.onion" target="_blank">tpornxvemr4hy37awgysltfrnzca63vtf46h33kyd5by6mrqz47pdmqd.onion</a></td><td><strong>True Porn</strong><br>More than 45 Terabites of CP</td><td><img src="/images/tor_screenshot_5593b58194dcd4fd4fa7a9af19250b5f.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://teen55nlmfo6zaervbgodqjjxekmlmdkvqf64kt2zspibxo6k3tcsuad.onion" target="_blank">teen55nlmfo6zaervbgodqjjxekmlmdkvqf64kt2zspibxo6k3tcsuad.onion</a></td><td><strong>True Teen Amateurs</strong><br>Hot small sluts rock the cock</td><td><img src="/images/tor_screenshot_cabddcd904c8bee67a3965baa0439538.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://pedogfhem64755nutx5x5u2yuq7tdl7vlkcgs7iaawggj2bpko3sfrad.onion" target="_blank">pedogfhem64755nutx5x5u2yuq7tdl7vlkcgs7iaawggj2bpko3sfrad.onion</a></td><td><strong>Pedo Asylum</strong><br>Home to the finest teen porn, fully available in HD and constantly updated to suit any sexual desire</td><td><img src="/images/tor_screenshot_b422662186d27700e1394d70ded5f0ff.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://daisypa3ny37qn5kzc5b2f6hsfkrafseytk6c43sfjuunaxumq4lplid.onion" target="_blank">daisypa3ny37qn5kzc5b2f6hsfkrafseytk6c43sfjuunaxumq4lplid.onion</a></td><td><strong>Daisys Destruction</strong><br>one of the most horrifying, CP snuff video series ever created</td><td><img src="/images/tor_screenshot_84be2ae3d95e4bd679427714b16097ae.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://girlxx4nqnmg23t46lvelpvnuqdtafrv4n67rl3hftqiu47m2febirid.onion" target="_blank">girlxx4nqnmg23t46lvelpvnuqdtafrv4n67rl3hftqiu47m2febirid.onion</a></td><td><strong>18 X Girls Forbidden porn</strong><br>18 Year Old Girls - Adult Videos and XXX Porn Pictures - Teen Sex Watch the hottest 18 year old girl</td><td><img src="/images/tor_screenshot_967e5ee4476d9298d5346c73e67dd626.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://loliindfkszt6kdcw64xfihzveyhtzw22bmmgtvyyhivs34gsuuzhvad.onion" target="_blank">loliindfkszt6kdcw64xfihzveyhtzw22bmmgtvyyhivs34gsuuzhvad.onion</a></td><td><strong>LoliPorn</strong><br>Annina ucatis, 140chan, little sister sex, Children porn watch free, blowjob gifs, real murder video</td><td><img src="/images/tor_screenshot_596eb714d9e30642843eee7f4528e3d4.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://boysmy5kq6ci3wwhpdxox2dnzzgcmtuiux36pep5p4uadcwa223fj5id.onion" target="_blank">boysmy5kq6ci3wwhpdxox2dnzzgcmtuiux36pep5p4uadcwa223fj5id.onion</a></td><td><strong>Boys Asylum | Porn Boys</strong><br>Gay Teen Porn Boys in Hot Fucking Porn Videos! Only Gay Teen Love Tube and Videos! Gay Boy Sex.</td><td><img src="/images/tor_screenshot_fca3c8b918e199b3d35e2b51efa8eb55.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://pornxzazqiiramkmeva5yanomptqanm4tbbhpvb4kwnsrwsg5k4rgjyd.onion" target="_blank">pornxzazqiiramkmeva5yanomptqanm4tbbhpvb4kwnsrwsg5k4rgjyd.onion</a></td><td><strong>Hard Porn Forum</strong><br>Best CP forum on the Darkweb</td><td><img src="/images/tor_screenshot_0e6a5dbe7e2c63752671a2229bd2f9d7.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://porn44szjutecgv2d3l52jo3kh7fy3miiexsfi6didguytq6pen7qgqd.onion" target="_blank">porn44szjutecgv2d3l52jo3kh7fy3miiexsfi6didguytq6pen7qgqd.onion</a></td><td><strong>Porn City</strong><br>pedophilia Porn City,porn,video,videos</td><td><img src="/images/tor_screenshot_127c628ce939500b333859935cfb5535.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://facebookwkhpilnemxj7asaniu7vnjjbiltxjqhye3mhbshg7kx5tfyd.onion" target="_blank">facebookwkhpilnemxj7asaniu7vnjjbiltxjqhye3mhbshg7kx5tfyd.onion</a></td><td><strong>Facebook over Tor</strong><br>-</td><td><img src="/images/tor_screenshot_c431130281a1b81f6e573d518c42d1cc.png" class="img-fluid" alt="Screenshot"></td></tr><tr class="animate__animated animate__fadeIn"><td style="width: 200px; word-wrap: break-word;"><a href="http://protonmailrmez3lotccipshtkleegetolb73fuirgj7r4o4vfu7ozyd.onion" target="_blank">protonmailrmez3lotccipshtkleegetolb73fuirgj7r4o4vfu7ozyd.onion</a></td><td><strong>Protonmail</strong><br>Swiss based e-mail service, encrypts e-mails locally on your browser. Free and paid accounts.</td><td><img src="/images/tor_screenshot_cb21fed6e0be59c8d16634151838c5ae.png" class="img-fluid" alt="Screenshot"></td></tr>                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-center">
+                <li class="page-item disabled"><a class="page-link">Previous</a></li><li class="page-item active"><a class="page-link" href="#">1</a></li><li class="page-item"><a class="page-link" href="?page=2&amp;search=">2</a></li><li class="page-item"><a class="page-link" href="?page=3&amp;search=">3</a></li><li class="page-item"><a class="page-link" href="?page=2&amp;search=">Next</a></li>            </ul>
+        </nav>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="/js/jquery-3.5.1.slim.min.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script>
+        // Scroll to Top Function
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+
+</body></html>
