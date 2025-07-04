@@ -39,6 +39,21 @@ import shutil
 import tempfile
 
 # === AGENT SYSTEM INTEGRATION ===
+import sys
+import os
+
+# Add the project root to the Python path
+project_root = os.path.join(os.path.dirname(__file__), '..', '..')
+sys.path.insert(0, project_root)
+
+# Add the agents directory to the path
+agents_path = os.path.join(project_root, 'src', 'agents')
+sys.path.insert(0, agents_path)
+
+# Add the analysis directory to the path
+analysis_path = os.path.join(project_root, 'src', 'analysis')
+sys.path.insert(0, analysis_path)
+
 from integrated_agent_system import integrated_agents
 
 # === ENHANCED ERROR HANDLING AND CONTENT ANALYSIS ===
@@ -269,7 +284,7 @@ input_rotation_lock = threading.Lock()
 # Resume configuration - set to start from a specific row (1-based indexing)
 # Set START_FROM_ROW = 1 to start from the beginning
 # Set START_FROM_ROW = N to start from row N (where N is the row number in the CSV)
-START_FROM_ROW = 2  # Currently set to start from row 3233
+START_FROM_ROW = 13090  # Currently set to start from row 3233
 OUTPUT_CSV = "crypto_addresses_fast.csv"
 SCREENSHOT_DIR = "screenshots_fast"
 CAPTCHA_FAILED_CSV = "captcha_failed_fast.csv"

@@ -9,14 +9,24 @@ This creates a 2-agent system where:
 """
 
 import os
+import sys
 import json
 import time
 import threading
+import hashlib
 from datetime import datetime, timedelta
+from urllib.parse import urlparse
 from collections import defaultdict, Counter
+from io import BytesIO
+from bs4 import BeautifulSoup
+import re
+
+# Add the project root to the Python path
+project_root = os.path.join(os.path.dirname(__file__), '..', '..')
+sys.path.insert(0, project_root)
 
 # Import environment variables
-from config import load_env_file, OPENAI_API_KEY, ANTHROPIC_API_KEY
+from config.config import load_env_file, OPENAI_API_KEY, ANTHROPIC_API_KEY
 
 # AI imports for intelligent analysis
 try:

@@ -38,6 +38,206 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Global set to track ALL discovered onions across ALL files and runs
+ALL_DISCOVERED_ONIONS = set()
+
+# ----------------------------
+# Enhanced Duplicate Prevention
+# ----------------------------
+def load_all_discovered_onions():
+    """Load ALL onion URLs from ALL previous discovery files and consolidated master file to prevent any duplicates."""
+    global ALL_DISCOVERED_ONIONS
+    
+    # First, try to load from consolidated master file (most efficient)
+    consolidated_files = glob.glob("consolidated_onions_*.csv")
+    if consolidated_files:
+        latest_consolidated = max(consolidated_files)  # Get the most recent one
+        logger.info(f"📚 Loading from consolidated master file: {latest_consolidated}")
+        
+        try:
+            with open(latest_consolidated, 'r', newline='', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                header = next(reader)  # Skip header
+                
+                file_count = 0
+                for row in reader:
+                    if len(row) > 0:
+                        full_url = row[0]  # onion_url is first column
+                        parsed_url = urlparse(full_url)
+                        if parsed_url.hostname:
+                            clean_onion = extract_clean_onion(parsed_url.hostname)
+                            if clean_onion:
+                                ALL_DISCOVERED_ONIONS.add(clean_onion)
+                                file_count += 1
+                
+                logger.info(f"📖 Loaded {file_count} onions from consolidated master file")
+                logger.info(f"✅ Total unique onions loaded: {len(ALL_DISCOVERED_ONIONS)}")
+                return  # Successfully loaded from consolidated file
+                
+        except Exception as e:
+            logger.error(f"❌ Could not read consolidated file {latest_consolidated}: {e}")
+            logger.info("🔄 Falling back to individual file processing...")
+    
+    # Fallback: Load from individual discovery files
+    previous_files = glob.glob("discovered_onions_*.csv")
+    archived_files = glob.glob("data/archives/discovered_onions_archive/discovered_onions_*.csv")
+    all_files = previous_files + archived_files
+    
+    if not all_files:
+        logger.info("🆕 No previous discovery files found.")
+        return
+
+    logger.info(f"📚 Loading ALL discovered onions from {len(all_files)} individual files...")
+    
+    for f_name in all_files:
+        try:
+            with open(f_name, 'r', newline='', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                
+                # Check if file has header or starts with data
+                first_row = next(reader, None)
+                if not first_row:
+                    continue
+                
+                # If first row looks like a URL (starts with http), treat as data row
+                if first_row[0].startswith('http'):
+                    url_index = 0
+                    # Process the first row
+                    full_url = first_row[url_index]
+                    parsed_url = urlparse(full_url)
+                    if parsed_url.hostname:
+                        clean_onion = extract_clean_onion(parsed_url.hostname)
+                        if clean_onion:
+                            ALL_DISCOVERED_ONIONS.add(clean_onion)
+                    
+                    # Process remaining rows
+                    for row in reader:
+                        if len(row) > url_index:
+                            full_url = row[url_index]
+                            parsed_url = urlparse(full_url)
+                            if parsed_url.hostname:
+                                clean_onion = extract_clean_onion(parsed_url.hostname)
+                                if clean_onion:
+                                    ALL_DISCOVERED_ONIONS.add(clean_onion)
+                else:
+                    # Has header, find onion_url column
+                    try:
+                        url_index = first_row.index('onion_url')
+                    except ValueError:
+                        logger.warning(f"⚠️  Skipping {f_name} - missing 'onion_url' column in header")
+                        continue
+                    
+                    # Process remaining rows
+                    for row in reader:
+                        if len(row) > url_index:
+                            full_url = row[url_index]
+                            parsed_url = urlparse(full_url)
+                            if parsed_url.hostname:
+                                clean_onion = extract_clean_onion(parsed_url.hostname)
+                                if clean_onion:
+                                    ALL_DISCOVERED_ONIONS.add(clean_onion)
+                
+                logger.info(f"📖 Processed {f_name}")
+                
+        except Exception as e:
+            logger.error(f"❌ Could not read {f_name}: {e}")
+    
+    logger.info(f"✅ Loaded {len(ALL_DISCOVERED_ONIONS)} total unique onions from all files")
+
+def check_and_add_onion(onion_url, source_url, depth, title, discovered_set):
+    """Thread-safe function to check if onion is new and add it to consolidated CSV if so."""
+    global ALL_DISCOVERED_ONIONS
+    
+    # Extract clean onion domain
+    parsed_url = urlparse(onion_url)
+    if not parsed_url.hostname:
+        return False
+    
+    clean_onion = extract_clean_onion(parsed_url.hostname)
+    if not clean_onion:
+        return False
+    
+    # Check if this onion has been seen anywhere before
+    with discovered_lock:
+        # Check both in-memory sets and global cross-file set
+        if clean_onion in ALL_DISCOVERED_ONIONS or clean_onion in discovered_set:
+            logger.debug(f"⏭️  Skipping duplicate onion: {clean_onion}")
+            return False
+        
+        # Add to both sets to prevent future duplicates
+        ALL_DISCOVERED_ONIONS.add(clean_onion)
+        discovered_set.add(clean_onion)
+        
+        # Write to consolidated CSV file with proper format
+        # Format: onion_url, source, depth, timestamp, title, discovery_count, source_files
+        row = [
+            onion_url, 
+            source_url, 
+            depth, 
+            datetime.utcnow().isoformat(), 
+            title,
+            1,  # discovery_count (1 for new discoveries)
+            f"discovered_onions_{datetime.utcnow().strftime('%Y%m%d')}.csv"  # source_files
+        ]
+        
+        with file_lock:
+            with open(OUTPUT_FILE, "a", newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(row)
+        
+        logger.info(f"➕ NEW onion discovered: {clean_onion} (source: {source_url})")
+        return True
+
+def validate_csv_integrity():
+    """Validate the current CSV file and remove any duplicates that might exist."""
+    if not os.path.exists(OUTPUT_FILE):
+        return
+    
+    logger.info("🔍 Validating CSV file integrity...")
+    
+    # Read all rows
+    rows = []
+    seen_onions = set()
+    duplicates_found = 0
+    
+    try:
+        with open(OUTPUT_FILE, 'r', newline='', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            header = next(reader)  # Keep header
+            rows.append(header)
+            
+            for row in reader:
+                if len(row) > 0:
+                    onion_url = row[0]
+                    parsed_url = urlparse(onion_url)
+                    if parsed_url.hostname:
+                        clean_onion = extract_clean_onion(parsed_url.hostname)
+                        if clean_onion and clean_onion not in seen_onions:
+                            seen_onions.add(clean_onion)
+                            rows.append(row)
+                        elif clean_onion:
+                            duplicates_found += 1
+                            logger.warning(f"⚠️  Found duplicate in CSV: {clean_onion}")
+                    else:
+                        rows.append(row)  # Keep rows without valid onion URLs
+                else:
+                    rows.append(row)  # Keep empty rows
+        
+        # Write back the deduplicated data
+        if duplicates_found > 0:
+            with open(OUTPUT_FILE, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerows(rows)
+            logger.info(f"✅ Removed {duplicates_found} duplicates from CSV file")
+        else:
+            logger.info("✅ No duplicates found in CSV file")
+            
+    except Exception as e:
+        logger.error(f"❌ Error validating CSV: {e}")
+
+# ----------------------------
+# Configuration
+# ----------------------------
 SEED_URLS = [
     "http://4yr6xac6fvhi6mdwm6julwnvkrj5whw43l7txyv267dm37stsn7i3rid.onion",
     "http://hhfrdjsr5fmlt472abc3p7ztxkwus42v6vmmqud2vmi7ytnxtzne3eid.onion",
@@ -406,7 +606,9 @@ ALTERNATIVE_SEARCH_PATTERNS = {
     #"torch": "http://torchdeedp3i2jigzjdmfpn5ttjhthh5wbmda2rr3jvqjg5p77c54dqd.onion/search?q={}"
 }
 
-OUTPUT_FILE = f"discovered_onions_{datetime.utcnow().strftime('%Y%m%d')}.csv"
+# Use consolidated master file instead of daily files
+CONSOLIDATED_FILE = "consolidated_onions_20250704_032019.csv"
+OUTPUT_FILE = CONSOLIDATED_FILE  # Point to the master file
 ADDRESSES_FILE = f"crypto_addresses_{datetime.utcnow().strftime('%Y%m%d')}.csv"
 KEYWORDS = [
     # Core CSAM terms
@@ -725,9 +927,92 @@ def extract_onion_links(html, base_url):
     return links
 
 def extract_title(html):
-    soup = BeautifulSoup(html, "html.parser")
-    title_tag = soup.find("title")
-    return title_tag.text.strip() if title_tag else ""
+    """Extract page title with multiple fallback strategies"""
+    try:
+        soup = BeautifulSoup(html, "html.parser")
+        
+        def clean_title(title):
+            """Clean and truncate title after common separators"""
+            # Normalize whitespace
+            title = re.sub(r'\s+', ' ', title)
+            
+            # Truncate after common separators (comma, pipe, dash, etc.)
+            # Order matters - check most common first
+            separators = [
+                ',',           # Comma
+                '|',           # Pipe
+                ' - ',         # Dash with spaces
+                ' – ',         # En dash with spaces
+                ' — ',         # Em dash with spaces
+                ' :: ',        # Double colon with spaces
+                ' : ',         # Single colon with spaces
+                '::',          # Double colon without spaces
+                ':',           # Single colon without spaces
+                ' -',          # Dash with space before
+                '- ',          # Dash with space after
+                '– ',          # En dash with space after
+                '— ',          # Em dash with space after
+            ]
+            
+            # Find the first separator that appears
+            for sep in separators:
+                if sep in title:
+                    title = title.split(sep)[0].strip()
+                    break
+            
+            # Limit length
+            title = title[:200]
+            
+            return title
+        
+        # Strategy 1: Standard <title> tag
+        title_tag = soup.find("title")
+        if title_tag and title_tag.text.strip():
+            title = clean_title(title_tag.text.strip())
+            if len(title) > 10:  # Only return if meaningful
+                return title
+        
+        # Strategy 2: Look for h1 tags
+        h1_tags = soup.find_all("h1")
+        for h1 in h1_tags:
+            if h1.text.strip() and len(h1.text.strip()) > 5:
+                title = clean_title(h1.text.strip())
+                return f"[H1] {title}"
+        
+        # Strategy 3: Look for h2 tags
+        h2_tags = soup.find_all("h2")
+        for h2 in h2_tags:
+            if h2.text.strip() and len(h2.text.strip()) > 5:
+                title = clean_title(h2.text.strip())
+                return f"[H2] {title}"
+        
+        # Strategy 4: Look for meta description
+        meta_desc = soup.find("meta", attrs={"name": "description"})
+        if meta_desc and meta_desc.get("content"):
+            title = clean_title(meta_desc["content"].strip())
+            if len(title) > 10:
+                return f"[META] {title}"
+        
+        # Strategy 5: Look for og:title
+        og_title = soup.find("meta", attrs={"property": "og:title"})
+        if og_title and og_title.get("content"):
+            title = clean_title(og_title["content"].strip())
+            if len(title) > 10:
+                return f"[OG] {title}"
+        
+        # Strategy 6: Extract from first paragraph
+        p_tags = soup.find_all("p")
+        for p in p_tags:
+            text = p.text.strip()
+            if text and len(text) > 20 and len(text) < 500:
+                title = clean_title(text)
+                return f"[P] {title}"
+        
+        return "[No Title]"
+        
+    except Exception as e:
+        logger.debug(f"❌ Error extracting title: {e}")
+        return "[Error]"
 
 def detect_search_forms(html, base_url):
     """Detect search forms on a page and return search patterns"""
@@ -812,6 +1097,11 @@ def search_on_discovered_engine(search_pattern, keyword, engine_url, depth):
             # Extract onion links from search results
             search_links = extract_onion_links(resp.text, search_url)
             logger.info(f"🔍 Dynamic search found {len(search_links)} links for '{keyword}' on {engine_url}")
+            
+            # Also extract page title for logging
+            search_title = extract_title(resp.text)
+            logger.info(f"🔍 Search page title: {search_title}")
+            
             return search_links
         else:
             logger.debug(f"🔍 Dynamic search failed with status {resp.status_code} for {search_url}")
@@ -1120,15 +1410,8 @@ def search_keywords_on_engines():
                             discovered_from_search.add(link)
                             logger.info(f"➕ Discovered from smart search: {link} (query: {query}, engine: {engine_name})")
                             
-                            # Save to CSV file immediately
-                            with discovered_lock:
-                                if link not in discovered:
-                                    discovered.add(link)
-                                    row = [f"http://{link}", search_url, 0, datetime.utcnow().isoformat(), f"Found via smart search: {query}"]
-                                    with file_lock:
-                                        with open(OUTPUT_FILE, "a", newline='') as f:
-                                            writer = csv.writer(f)
-                                            writer.writerow(row)
+                            # Use enhanced duplicate prevention
+                            check_and_add_onion(f"http://{link}", search_url, 0, f"Found via smart search: {query}", discovered)
                 
                 # Update progress
                 completed_searches += 1
@@ -1177,14 +1460,8 @@ def search_keywords_on_engines():
                                 discovered_from_search.add(link)
                                 logger.info(f"➕ Discovered from adaptive search: {link}")
                                 
-                                with discovered_lock:
-                                    if link not in discovered:
-                                        discovered.add(link)
-                                        row = [f"http://{link}", search_url, 0, datetime.utcnow().isoformat(), f"Found via adaptive search: {adaptive_query}"]
-                                        with file_lock:
-                                            with open(OUTPUT_FILE, "a", newline='') as f:
-                                                writer = csv.writer(f)
-                                                writer.writerow(row)
+                                # Use enhanced duplicate prevention
+                                check_and_add_onion(f"http://{link}", search_url, 0, f"Found via adaptive search: {adaptive_query}", discovered)
                     
                     time.sleep(random.randint(1, 3))
                     
@@ -1213,13 +1490,22 @@ def process_url(url, depth, max_depth):
     if not clean_host:
         return []
     
-    # Thread-safe check for seen URLs
+    # Check if this is a duplicate visit (for logging purposes)
+    is_duplicate_visit = False
     with seen_lock:
-        if clean_host in seen or depth > max_depth:
-            return []
-        seen.add(clean_host)
+        if clean_host in seen:
+            is_duplicate_visit = True
+        else:
+            seen.add(clean_host)
     
-    logger.info(f"🌐 Visiting: {url} | Depth: {depth}")
+    # Only check depth limit, allow crawling duplicates for deeper discovery
+    if depth > max_depth:
+        return []
+    
+    if is_duplicate_visit:
+        logger.info(f"🔄 Re-visiting: {url} | Depth: {depth} (for deeper discovery)")
+    else:
+        logger.info(f"🌐 Visiting: {url} | Depth: {depth}")
     
     try:
         # Create a new session for each thread to avoid conflicts
@@ -1235,29 +1521,31 @@ def process_url(url, depth, max_depth):
         logger.info(f"🔎 HTTP status for {url}: {resp.status_code}")
         new_links = []
         
+        # Extract page title for logging and storage
+        page_title = extract_title(resp.text)
+        if not is_duplicate_visit:
+            logger.info(f"📄 Page title: {page_title}")
+        
         # Always extract onion links for crawling, regardless of keywords
         extracted_links = extract_onion_links(resp.text, url)
-        logger.info(f"🔗 Found {len(extracted_links)} onion links on {url}")
-        if extracted_links:
-            logger.info(f"🔗 Links: {list(extracted_links)}")
+        if not is_duplicate_visit:
+            logger.info(f"🔗 Found {len(extracted_links)} onion links on {url}")
+            if extracted_links:
+                logger.info(f"🔗 Links: {list(extracted_links)}")
+        else:
+            logger.info(f"🔗 Found {len(extracted_links)} onion links on {url} (re-visit)")
         
         # NEW: Perform dynamic searches if search forms are detected
         if resp.status_code == 200:
             dynamic_links = perform_dynamic_searches(resp.text, url, depth)
             extracted_links.update(dynamic_links)
-            logger.info(f"🔍 Dynamic searches added {len(dynamic_links)} links to extraction")
+            if not is_duplicate_visit:
+                logger.info(f"🔍 Dynamic searches added {len(dynamic_links)} links to extraction")
         
         # Save all discovered onion links to output file (not just those with keywords)
-        with discovered_lock:
-            for link in extracted_links:
-                if link not in discovered:
-                    discovered.add(link)
-                    row = [f"http://{link}", url, depth, datetime.utcnow().isoformat(), extract_title(resp.text)]
-                    logger.info(f"➕ Discovered: {link}")
-                    with file_lock:
-                        with open(OUTPUT_FILE, "a", newline='') as f:
-                            writer = csv.writer(f)
-                            writer.writerow(row)
+        for link in extracted_links:
+            # Use enhanced duplicate prevention with the extracted title
+            check_and_add_onion(f"http://{link}", url, depth, page_title, discovered)
         
         # Track URLs at maximum depth for deeper crawling
         if depth == max_depth:
@@ -1282,10 +1570,11 @@ def process_url(url, depth, max_depth):
         logger.debug(f"⏳ Sleeping {sleep_time}s")
         time.sleep(sleep_time)
         
-        # Extract cryptocurrency addresses
+        # Extract cryptocurrency addresses (only print for new visits to avoid spam)
         addresses = extract_crypto_addresses(resp.text)
         if addresses:
-            logger.info(f"💰 Found {len(addresses)} cryptocurrency addresses on {url}")
+            if not is_duplicate_visit:
+                logger.info(f"💰 Found {len(addresses)} cryptocurrency addresses on {url}")
             with file_lock:
                 with open(ADDRESSES_FILE, "a", newline='') as f:
                     writer = csv.writer(f)
@@ -1337,6 +1626,11 @@ def crawl(start_urls, max_depth=2, resume=False, no_search=False):
     global seen, discovered, page_counter, addresses_found, last_processed_url, max_depth_urls
     
     start_time = datetime.utcnow()
+    
+    # Initialize enhanced duplicate prevention
+    logger.info("🔍 Initializing enhanced duplicate prevention...")
+    load_all_discovered_onions()
+    validate_csv_integrity()
     
     # Load previous progress if resuming
     if resume:
@@ -1422,10 +1716,17 @@ def crawl(start_urls, max_depth=2, resume=False, no_search=False):
     if restart_info and not resume:
         logger.info(f"💡 To resume from last crash, run with --resume flag")
     
+    # Ensure consolidated file exists with proper header
     if not os.path.exists(OUTPUT_FILE):
         with open(OUTPUT_FILE, "w", newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(["onion_url", "source", "depth", "timestamp", "title"])
+            writer.writerow([
+                "onion_url", "source", "depth", "timestamp", "title", 
+                "discovery_count", "source_files"
+            ])
+        logger.info(f"📝 Created new consolidated file: {OUTPUT_FILE}")
+    else:
+        logger.info(f"📝 Using existing consolidated file: {OUTPUT_FILE}")
 
     # Create addresses file if it doesn't exist
     if not os.path.exists(ADDRESSES_FILE):

@@ -6,13 +6,19 @@ import json
 import random
 import string
 import base64
+import sys
 
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 from collections import defaultdict
 from io import BytesIO
 from bs4 import BeautifulSoup
-from config import OPENAI_API_KEY, ANTHROPIC_API_KEY
+
+# Add the project root to the Python path
+project_root = os.path.join(os.path.dirname(__file__), '..', '..')
+sys.path.insert(0, project_root)
+
+from config.config import OPENAI_API_KEY, ANTHROPIC_API_KEY
 
 # ---[ Load Environment Variables ]---
 def load_env_file():
@@ -462,108 +468,6 @@ class LearningAgent:
                 
         except Exception as e:
             print(f"⚠️ Failure learning error: {e}")
-        """Enhanced failure learning with pattern recognition"""
-        try:
-            with self.lock:
-                # Extract URL pattern
-                url_pattern = self.extract_url_pattern(url)
-                
-                # Extract content signatures
-                content_signatures = self.extract_content_signatures(page_content) if page_content else {}
-                
-                # Create failure record
-                failure_record = {
-                    'url': url,
-                    'url_pattern': url_pattern,
-                    'content_signatures': content_signatures,
-                    'error_type': error_type,
-                    'strategy_attempted': strategy_attempted,
-                    'worker_id': worker_id,
-                    'stage': stage,
-                    'timestamp': datetime.utcnow().isoformat(),
-                    'addresses_found': addresses_found or 0
-                }
-                
-                # Store failure pattern
-                if error_type not in self.failure_patterns:
-                    self.failure_patterns[error_type] = []
-                self.failure_patterns[error_type].append(failure_record)
-                
-                # Update strategy success rate
-                domain = url_pattern.get('domain', 'unknown')
-                self.update_strategy_success_rate(domain, strategy_attempted, False, stage)
-                
-                # Generate adaptation rule for repeated failures
-                recent_failures = [f for f in self.failure_patterns[error_type] 
-                                 if f['url_pattern'].get('domain') == domain and
-                                 (datetime.utcnow() - datetime.fromisoformat(f['timestamp'])).total_seconds() < 3600]
-                
-                if len(recent_failures) >= 2:
-                    print(f"🔧 [{worker_id}] Multiple failures detected for {domain} - generating adaptation rule")
-                    self.generate_adaptation_rule(url, error_type)
-                
-                # Save knowledge base
-                self.save_knowledge_base()
-                
-                print(f"📚 [{worker_id}] Learned from failure: {error_type} on {domain} (strategy {strategy_attempted})")
-                
-        except Exception as e:
-            print(f"⚠️ Failure learning error: {e}")
-        """Enhanced learning from failures with conditional AI analysis - only use AI when addresses are found"""
-        try:
-            with self.lock:
-                domain = urlparse(url).netloc
-                url_pattern = self.extract_url_pattern(url)
-                
-                # Extract content signatures for pattern matching
-                content_signatures = self.extract_content_signatures(page_content)
-                
-                # Only use AI analysis if addresses were found (to save costs)
-                ai_analysis = None
-                if addresses_found and len(addresses_found) > 0:
-                    print(f"🤖 [{worker_id}] Using AI analysis since {len(addresses_found)} addresses were found")
-                    # Truncate page content before sending to AI to prevent token limit issues
-                    if page_content and len(page_content) > 5000:
-                        print(f"⚠️ [{worker_id}] Truncating page content from {len(page_content)} to 5000 characters for AI analysis")
-                        page_content = page_content[:5000]
-                    ai_analysis = self.ai_analyze_page_content(page_content, url)
-                else:
-                    print(f"💰 [{worker_id}] Skipping AI analysis - no addresses found (cost optimization)")
-                    ai_analysis = {'page_type': 'unknown', 'content_type': 'unknown'}
-                
-                # Record failure pattern
-                failure_record = {
-                    'url_pattern': url_pattern,
-                    'error_type': error_type,
-                    'strategy_attempted': strategy_attempted,
-                    'timestamp': datetime.utcnow().isoformat(),
-                    'worker_id': worker_id,
-                    'is_darknet': domain.endswith('.onion'),
-                    'content_signatures': content_signatures,
-                    'ai_analysis': ai_analysis,
-                    'stage': stage,
-                    'addresses_found': addresses_found is not None and len(addresses_found) > 0
-                }
-                
-                if error_type not in self.failure_patterns:
-                    self.failure_patterns[error_type] = []
-                
-                self.failure_patterns[error_type].append(failure_record)
-                
-                # Update strategy success rates (mark as failed)
-                self.update_strategy_success_rate(domain, strategy_attempted, False, stage)
-                
-                # Generate adaptation rule for this failure
-                self.generate_darknet_adaptation_rule(url, error_type, ai_analysis)
-                
-                print(f"📚 [{worker_id}] Learned from failure: {error_type} for {domain} at stage {stage}")
-                
-                # Save knowledge periodically
-                if len(self.failure_patterns[error_type]) % 5 == 0:
-                    self.save_knowledge_base()
-                    
-        except Exception as e:
-            print(f"⚠️ Learning from failure failed: {e}")
     
     def generate_darknet_adaptation_rule(self, url, error_type, ai_analysis):
         """Generate darknet-specific adaptation rules"""
