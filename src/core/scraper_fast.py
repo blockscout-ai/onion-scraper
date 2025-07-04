@@ -218,6 +218,57 @@ def fetch_google_sheet_addresses():
         print(f"❌ Error fetching Google Sheet addresses: {e}")
         return set()
 
+def fetch_google_sheet_urls():
+    """Fetch all URLs from column F 'url' of Google Sheet darknet_automation tab"""
+    try:
+        gc = gspread.service_account(filename=GOOGLE_SHEET_SERVICE_ACCOUNT)
+        sheet = gc.open_by_url(GOOGLE_SHEET_URL).worksheet(GOOGLE_SHEET_NAME)
+        
+        # Get all values from the sheet
+        all_values = sheet.get_all_values()
+        if not all_values:
+            print("⚠️ No data found in Google Sheet")
+            return []
+        
+        # Find the URL column (column F, index 5, or look for 'url' in header)
+        header = all_values[0]
+        url_col_index = None
+        
+        # First try to find column F (index 5)
+        if len(header) > 5:
+            url_col_index = 5  # Column F
+        
+        # If column F doesn't exist or we want to be more flexible, look for 'url' in header
+        if url_col_index is None:
+            for i, col_name in enumerate(header):
+                if 'url' in col_name.lower():
+                    url_col_index = i
+                    break
+        
+        if url_col_index is None:
+            print("⚠️ URL column not found in Google Sheet")
+            return []
+        
+        # Extract URLs from the column
+        urls = []
+        unique_urls = set()  # Track unique URLs to avoid duplicates
+        
+        for row in all_values[1:]:  # Skip header
+            if len(row) > url_col_index:
+                url = row[url_col_index].strip()
+                if url and url.lower() not in ['', 'nan', 'none'] and url.startswith('http'):
+                    # Avoid duplicates
+                    if url not in unique_urls:
+                        urls.append(url)
+                        unique_urls.add(url)
+        
+        print(f"✅ Loaded {len(urls)} unique URLs from Google Sheet column F")
+        return urls
+        
+    except Exception as e:
+        print(f"❌ Error fetching Google Sheet URLs: {e}")
+        return []
+
 def check_and_move_duplicates():
     """Check for duplicates in main CSV and move them to duplicate file"""
     try:
@@ -371,7 +422,10 @@ ROTATE_EVERY_N = 33  # More frequent rotation for better anonymity
 # Primary input file for new URLs
 PRIMARY_INPUT_CSV = "data/raw/human_trafficking_alerts_0702.csv"
 
-# Secondary input file for re-scraping (CSAM sites only)
+# Secondary input source: Google Sheet URLs (column F)
+USE_GOOGLE_SHEET_AS_SECONDARY = True
+
+# Legacy secondary input file (kept for fallback)
 SECONDARY_INPUT_CSV = "data/raw/crypto_addresses_fast.csv"
 
 # Input rotation settings
@@ -5853,7 +5907,10 @@ def main():
         if START_FROM_ROW > 1:
             print(f"🔄 RESUMING from row {START_FROM_ROW}")
         print(f"📁 Primary input: {PRIMARY_INPUT_CSV}")
-        print(f"📁 Secondary input: {SECONDARY_INPUT_CSV}")
+        if USE_GOOGLE_SHEET_AS_SECONDARY:
+            print(f"📁 Secondary input: Google Sheet URLs (column F)")
+        else:
+            print(f"📁 Secondary input: {SECONDARY_INPUT_CSV}")
         print(f"🔄 Input rotation: Every {ROTATE_INPUT_EVERY_N_URLS} URLs")
         print(f"📁 Output: {OUTPUT_CSV}")
         print(f"📸 Screenshots: {SCREENSHOT_DIR}")
@@ -5942,7 +5999,7 @@ def main():
         
         # Read URLs from current input file with unique address tracking
         current_file = get_next_input_file()
-        csam_only = (current_file == SECONDARY_INPUT_CSV and CSAM_ONLY_FROM_SECONDARY)
+        csam_only = ((current_file == SECONDARY_INPUT_CSV or current_file == "GOOGLE_SHEET") and CSAM_ONLY_FROM_SECONDARY)
         urls = load_urls_from_input_file(current_file, csam_only, seen_addresses, START_FROM_ROW)
         
         if not urls:
@@ -6068,7 +6125,10 @@ def main():
         print(f"   • Average rate: {processed_count/total_time:.1f} URLs/sec")
         print(f"📁 Results saved to: {OUTPUT_CSV}")
         print(f"📁 Primary input: {PRIMARY_INPUT_CSV}")
-        print(f"📁 Secondary input: {SECONDARY_INPUT_CSV}")
+        if USE_GOOGLE_SHEET_AS_SECONDARY:
+            print(f"📁 Secondary input: Google Sheet URLs (column F)")
+        else:
+            print(f"📁 Secondary input: {SECONDARY_INPUT_CSV}")
         print(f"🔄 Input rotation: {'ENABLED' if ENABLE_INPUT_ROTATION else 'DISABLED'}")
         print(f"📸 Screenshots saved to: {SCREENSHOT_DIR}")
         print("=" * 60)
@@ -6210,8 +6270,12 @@ def get_next_input_file():
             urls_since_input_rotation >= ROTATE_INPUT_EVERY_N_URLS):
             
             if current_input_file == PRIMARY_INPUT_CSV:
-                current_input_file = SECONDARY_INPUT_CSV
-                print(f"🔄 Rotating to secondary input: {SECONDARY_INPUT_CSV}")
+                if USE_GOOGLE_SHEET_AS_SECONDARY:
+                    current_input_file = "GOOGLE_SHEET"
+                    print(f"🔄 Rotating to Google Sheet URLs (column F)")
+                else:
+                    current_input_file = SECONDARY_INPUT_CSV
+                    print(f"🔄 Rotating to secondary input: {SECONDARY_INPUT_CSV}")
             else:
                 current_input_file = PRIMARY_INPUT_CSV
                 print(f"🔄 Rotating to primary input: {PRIMARY_INPUT_CSV}")
@@ -6221,11 +6285,22 @@ def get_next_input_file():
         return current_input_file
 
 def load_urls_from_input_file(input_file, csam_only=False, seen_addresses=None, start_row=1):
-    """Load URLs from input file with optional CSAM filtering and unique address tracking"""
+    """Load URLs from input file or Google Sheet with optional CSAM filtering and unique address tracking"""
     urls = []
     unique_urls = set()  # Track unique URLs to avoid duplicates
     
     try:
+        # Handle Google Sheet URLs
+        if input_file == "GOOGLE_SHEET":
+            urls = fetch_google_sheet_urls()
+            print(f"📁 Loaded {len(urls)} unique URLs from Google Sheet column F")
+            if csam_only:
+                print(f"🔍 Note: CSAM filtering not available for Google Sheet URLs")
+            if seen_addresses:
+                print(f"🚫 Note: Address-based filtering not available for Google Sheet URLs")
+            return urls
+        
+        # Handle file-based inputs
         with open(input_file, 'r') as f:
             reader = csv.reader(f)
             
