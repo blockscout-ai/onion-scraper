@@ -347,10 +347,10 @@ ROTATE_EVERY_N = 33  # More frequent rotation for better anonymity
 
 # ---[ MULTI-INPUT FILE CONFIGURATION ]---
 # Primary input file for new URLs
-PRIMARY_INPUT_CSV = "human_trafficking_alerts_0702.csv"
+PRIMARY_INPUT_CSV = "data/raw/human_trafficking_alerts_0702.csv"
 
 # Secondary input file for re-scraping (CSAM sites only)
-SECONDARY_INPUT_CSV = "crypto_addresses_fast.csv"
+SECONDARY_INPUT_CSV = "data/raw/crypto_addresses_fast.csv"
 
 # Input rotation settings
 ENABLE_INPUT_ROTATION = True
@@ -366,10 +366,10 @@ input_rotation_lock = threading.Lock()
 # Set START_FROM_ROW = 1 to start from the beginning
 # Set START_FROM_ROW = N to start from row N (where N is the row number in the CSV)
 START_FROM_ROW = 1  # Currently set to start from row 3233
-OUTPUT_CSV = "crypto_addresses_fast.csv"
-SCREENSHOT_DIR = "screenshots_fast"
-CAPTCHA_FAILED_CSV = "captcha_failed_fast.csv"
-UNSOLVED_DIR = "unsolved_captchas_fast"
+OUTPUT_CSV = "data/raw/crypto_addresses_fast.csv"
+SCREENSHOT_DIR = "data/raw/screenshots_fast"
+CAPTCHA_FAILED_CSV = "data/raw/captcha_failed_fast.csv"
+UNSOLVED_DIR = "data/raw/unsolved_captchas_fast"
 MAX_DEPTH = 4  # Reduced for speed
 PAGE_LOAD_TIMEOUT = 45  # Reduced to avoid Chrome internal limits
 MAX_WORKERS = 1  # Reduced to prevent DevTools port conflicts on macOS
@@ -388,7 +388,7 @@ GOOGLE_SHEET_SERVICE_ACCOUNT = '/Users/jasoncomer/Desktop/blockscout_python/ofac
 GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/14ApkAb5jHTv-wzP8CFJTax31UXYkFb0ebDDd6Bg1EC8/edit#gid=1998112463'
 GOOGLE_SHEET_NAME = 'darknet_automation'
 GOOGLE_SHEET_CHECK_INTERVAL = 50  # Check every 50 URLs
-DUPLICATE_DIVERT_CSV = 'duplicated_address_0702.csv'
+DUPLICATE_DIVERT_CSV = 'data/raw/duplicated_address_0702.csv'
 
 # ---[ HUMAN TRAFFICKING DETECTION CONFIGURATION ]---
 # Priority thresholds for human trafficking alerts
@@ -397,10 +397,10 @@ TRAFFICKING_HIGH_THRESHOLD = 10      # Score for HIGH priority
 TRAFFICKING_MEDIUM_THRESHOLD = 5     # Score for MEDIUM priority
 
 # Alert file for human trafficking detections
-HUMAN_TRAFFICKING_ALERTS_CSV = "human_trafficking_alerts_0702.csv"
+HUMAN_TRAFFICKING_ALERTS_CSV = "data/raw/human_trafficking_alerts_0702.csv"
 
 # Alert file for scam detections
-SCAM_ALERTS_CSV = "scam_alerts.csv"
+SCAM_ALERTS_CSV = "data/raw/scam_alerts.csv"
 
 # Enhanced detection settings
 ENABLE_TRAFFICKING_DETECTION = True
@@ -424,7 +424,7 @@ ENABLE_IMMEDIATE_PROCESSING = False
 IMMEDIATE_PROCESSING_THRESHOLD = 10  # Score threshold for immediate processing
 
 # Retry list configuration - only for failed captcha/login
-RETRY_LIST_CSV = "retry_failed_captcha_login.csv"
+RETRY_LIST_CSV = "data/raw/retry_failed_captcha_login.csv"
 ENABLE_RETRY_LIST = True
 RETRY_REASONS = ["captcha_failed", "login_failed", "registration_failed", "form_submission_failed"]
 
@@ -462,9 +462,9 @@ MULTI_VENDOR_MARKETS = [
     "samsara", "cyberpunk", "apollon", "deepdotweb", "darknetlive"
 ]
 
-SKIPPED_MARKETS_CSV = "skipped_multi_vendor_markets_fast.csv"
-DISCOVERED_LINKS_CSV = "discovered_links_fast.csv"  # For external .onion link discovery
-DEBUG_DIR = "debug_html"
+SKIPPED_MARKETS_CSV = "data/raw/skipped_multi_vendor_markets_fast.csv"
+DISCOVERED_LINKS_CSV = "data/raw/discovered_links_fast.csv"  # For external .onion link discovery
+DEBUG_DIR = "data/raw/debug_html"
 
 os.makedirs(SCREENSHOT_DIR, exist_ok=True)
 os.makedirs(UNSOLVED_DIR, exist_ok=True)
@@ -4721,11 +4721,11 @@ def attempt_form_fill(driver, form, url, form_type):
             time.sleep(MEDIUM_WAIT)
             # Log the attempt
             if form_type == "login":
-                write_to_csv_threadsafe([url, creds['username'], creds['password'], fields_filled, datetime.utcnow().isoformat()], 'login_attempts.csv')
+                write_to_csv_threadsafe([url, creds['username'], creds['password'], fields_filled, datetime.utcnow().isoformat()], 'data/raw/login_attempts.csv')
             elif form_type == "registration":
-                write_to_csv_threadsafe([url, creds['username'], creds['password'], creds['email'], fields_filled, datetime.utcnow().isoformat()], 'registration_attempts.csv')
+                write_to_csv_threadsafe([url, creds['username'], creds['password'], creds['email'], fields_filled, datetime.utcnow().isoformat()], 'data/raw/registration_attempts.csv')
             elif form_type == "checkout":
-                write_to_csv_threadsafe([url, creds['email'], creds.get('btc_address', 'N/A'), fields_filled, datetime.utcnow().isoformat()], 'checkout_attempts.csv')
+                write_to_csv_threadsafe([url, creds['email'], creds.get('btc_address', 'N/A'), fields_filled, datetime.utcnow().isoformat()], 'data/raw/checkout_attempts.csv')
             if unfilled_fields:
                 print(f"⚠️ Unfilled fields: {unfilled_fields}")
             print(f"✅ Filled {form_type} form with {fields_filled} fields")
@@ -4794,9 +4794,9 @@ def attempt_input_fill(driver, inputs, url, form_type):
                 
                 # Log the attempt
                 if form_type == "login":
-                    write_to_csv_threadsafe([url, creds['username'], creds['password'], fields_filled, datetime.utcnow().isoformat()], 'login_attempts.csv')
+                    write_to_csv_threadsafe([url, creds['username'], creds['password'], fields_filled, datetime.utcnow().isoformat()], 'data/raw/login_attempts.csv')
                 else:
-                    write_to_csv_threadsafe([url, creds['username'], creds['password'], creds['email'], fields_filled, datetime.utcnow().isoformat()], 'registration_attempts.csv')
+                    write_to_csv_threadsafe([url, creds['username'], creds['password'], creds['email'], fields_filled, datetime.utcnow().isoformat()], 'data/raw/registration_attempts.csv')
                 
                 print(f"✅ Filled {form_type} inputs with {fields_filled} fields")
                 return True
@@ -5714,7 +5714,7 @@ def process_url_immediately(url, worker_id, priority="HIGH"):
             trafficking_alert['priority'], "|".join(trafficking_alert['patterns']),
             len(addresses), "address_screenshots_only", datetime.utcnow().isoformat()
         ]
-        write_to_csv_threadsafe(immediate_data, "immediate_processing_log.csv")
+        write_to_csv_threadsafe(immediate_data, "data/raw/immediate_processing_log.csv")
         
         print(f"🎉 [{worker_id}] Immediate processing completed for {get_base_domain(url)}")
         return results
@@ -5864,11 +5864,11 @@ def main():
             print(f"🚨 Created scam alerts file: {SCAM_ALERTS_CSV}")
         
         # Create immediate processing log CSV with headers if it doesn't exist
-        if not os.path.exists("immediate_processing_log.csv"):
-            with open("immediate_processing_log.csv", 'w', newline='') as f:
+        if not os.path.exists("data/raw/immediate_processing_log.csv"):
+            with open("data/raw/immediate_processing_log.csv", 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(['url', 'title', 'priority', 'score', 'trafficking_priority', 'patterns', 'addresses_found', 'screenshot_type', 'timestamp'])
-            print(f"⚡ Created immediate processing log file: immediate_processing_log.csv")
+            print(f"⚡ Created immediate processing log file: data/raw/immediate_processing_log.csv")
         
         # Create retry list CSV with headers if it doesn't exist
         if not os.path.exists(RETRY_LIST_CSV):

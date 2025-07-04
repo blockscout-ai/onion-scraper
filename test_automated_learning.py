@@ -6,7 +6,7 @@ This script demonstrates how the automated learning system works.
 
 import time
 import random
-from agents.automated_learning_core import AutomatedLearningCore
+from src.agents.automated_learning_core import AutomatedLearningCore
 
 def simulate_scraping_attempts(automated_learning, num_attempts=50):
     """Simulate scraping attempts to test learning"""
