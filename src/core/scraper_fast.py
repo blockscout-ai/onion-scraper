@@ -446,11 +446,11 @@ OUTPUT_CSV = "data/raw/crypto_addresses_fast.csv"
 SCREENSHOT_DIR = "data/raw/screenshots_fast"
 CAPTCHA_FAILED_CSV = "data/raw/captcha_failed_fast.csv"
 UNSOLVED_DIR = "data/raw/unsolved_captchas_fast"
-MAX_DEPTH = 4  # Reduced for speed
+MAX_DEPTH = 6  # Reduced for speed
 PAGE_LOAD_TIMEOUT = 45  # Reduced to avoid Chrome internal limits
-MAX_WORKERS = 1  # Reduced to prevent DevTools port conflicts on macOS
+MAX_WORKERS = 10  # Reduced to prevent DevTools port conflicts on macOS
 FAST_MODE = True
-HEADLESS_MODE = False  # Changed to False to watch browser
+HEADLESS_MODE = True  # Changed to False to watch browser
 BATCH_SIZE = 20  # Batch CSV writes
 
 # Enhanced safety and reliability settings
