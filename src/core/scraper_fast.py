@@ -44,6 +44,76 @@ def get_random_suffix(length=5):
     """Generate a random suffix for unique usernames and names"""
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
+def fill_visible_inputs_anywhere(driver, data_dict=None):
+    """
+    Fill all visible and enabled <input> fields in the DOM, regardless of form context.
+    data_dict: Optional dict mapping field types/names to values (e.g., {'email': ..., 'username': ...})
+    """
+    import time
+    random_suffix = get_random_suffix()
+    timestamp = int(time.time())
+    # Default data if not provided
+    default_data = {
+        'email': f'user_{timestamp}_{random_suffix}@protonmail.com',
+        'username': f'user_{timestamp}_{random_suffix}',
+        'name': f'John Doe {random_suffix}',
+        'first_name': f'John{random_suffix}',
+        'last_name': f'Doe{random_suffix}',
+        'password': 'SecurePass123!',
+        'phone': '+1-555-123-4567',
+        'address': '123 Main Street',
+        'city': 'New York',
+        'zip': '10001',
+    }
+    if data_dict:
+        default_data.update(data_dict)
+    
+    inputs = driver.find_elements(By.TAG_NAME, 'input')
+    fields_filled = 0
+    for inp in inputs:
+        try:
+            if not inp.is_displayed() or not inp.is_enabled():
+                continue
+            field_type = inp.get_attribute('type') or 'text'
+            field_name = (inp.get_attribute('name') or '').lower()
+            field_id = (inp.get_attribute('id') or '').lower()
+            field_placeholder = (inp.get_attribute('placeholder') or '').lower()
+            field_text = f"{field_name} {field_id} {field_placeholder}".lower()
+            value_to_fill = None
+            # Priority: email, username, password, name, phone, address, city, zip
+            if field_type == 'email' or 'email' in field_text:
+                value_to_fill = default_data['email']
+            elif field_type == 'password' or 'pass' in field_text:
+                value_to_fill = default_data['password']
+            elif 'user' in field_text or 'login' in field_text:
+                value_to_fill = default_data['username']
+            elif 'first' in field_text and 'name' in field_text:
+                value_to_fill = default_data['first_name']
+            elif 'last' in field_text and 'name' in field_text:
+                value_to_fill = default_data['last_name']
+            elif 'name' in field_text:
+                value_to_fill = default_data['name']
+            elif 'phone' in field_text or 'mobile' in field_text:
+                value_to_fill = default_data['phone']
+            elif 'address' in field_text:
+                value_to_fill = default_data['address']
+            elif 'city' in field_text:
+                value_to_fill = default_data['city']
+            elif 'zip' in field_text or 'postal' in field_text:
+                value_to_fill = default_data['zip']
+            elif field_type == 'text' and not value_to_fill:
+                value_to_fill = default_data['username']
+            if value_to_fill:
+                inp.clear()
+                inp.send_keys(value_to_fill)
+                print(f"[fill_visible_inputs_anywhere] Filled '{field_name or field_id or field_placeholder or field_type}' with '{value_to_fill}'")
+                fields_filled += 1
+        except Exception as e:
+            print(f"[fill_visible_inputs_anywhere] Could not fill input: {e}")
+            continue
+    print(f"[fill_visible_inputs_anywhere] Total fields filled: {fields_filled}")
+    return fields_filled
+
 # === AGENT SYSTEM INTEGRATION ===
 import sys
 import os
@@ -1917,7 +1987,7 @@ def process_url_fast(url, worker_id):
             
             # Try smart iterative e-commerce flow first
             print(f"🔄 [{worker_id}] Starting smart iterative e-commerce flow...")
-            iterative_addresses = smart_iterative_ecommerce_flow(driver, url, title, categories, max_iterations=3)
+            iterative_addresses = smart_iterative_ecommerce_flow(driver, url, title, categories, max_iterations=3, worker_id=worker_id)
             if iterative_addresses:
                 addresses.extend(iterative_addresses)
                 ai_handled = True
@@ -2497,7 +2567,6 @@ def ai_solve_captcha(image):
             return response.choices[0].message.content.strip()
     except Exception as e:
         return ""
-    return ""
 
 def ai_handle_login_enhanced(driver, url, categories=None):
     """Smart login handling with basic methods first, AI as fallback"""
@@ -2535,7 +2604,7 @@ def ai_handle_login_enhanced(driver, url, categories=None):
             print("   -> ✅ Basic link click successful")
             return True
         
-        # Step 5: Only if all basic methods fail, try AI methods (API calls)
+        # Step 5: Try AI methods (API calls)
         if check_api_quota():
             print("   -> All basic methods failed, trying AI methods...")
             # AI methods would go here if we had them enabled
@@ -4972,7 +5041,7 @@ def classify_site(url, title, html_content):
                 return ["scam", "mining botnet"]
             else:
                 return ["scam"]
-        elif any(word in text_to_analyze for word in ["wallet hack", "wallet hacker", "wallet hackers", "hacked wallet", "bitcoin generator", "btc generator", "private key generator", "stolen wallet"]):
+        elif any(word in text_to_analyze for word in ["wallet", "hack", "hacker", "hackers", "bitcoin generator", "btc generator", "private key generator", "stolen wallet"]):
             return ["scam"]
         elif any(word in text_to_analyze for word in ["market", "shop", "store", "vendor", "seller"]):
             return ["marketplace"]
@@ -5162,7 +5231,7 @@ def ai_solve_visual_captcha(driver):
             return False
 
         # 2. Parse the instruction - check for simple button command first
-        simple_button_match = re.search(r'(?:Press|Click) the ([\w\s]+) button', instruction_text, re.IGNORECASE)
+        simple_button_match = re.search(r'(?:Press|Click) the (\w+) button', instruction_text, re.IGNORECASE)
         if simple_button_match:
             button_text = simple_button_match.group(1).lower().strip()
             print(f"   -> Simple instruction detected: Click the '{button_text}' button.")
@@ -5676,7 +5745,7 @@ def process_url_immediately(url, worker_id, priority="HIGH"):
 
         # After navbar, try smart iterative flow quickly
         if driver and not addresses:
-            iterative_addresses = smart_iterative_ecommerce_flow(driver, url, title, categories, max_iterations=2)
+            iterative_addresses = smart_iterative_ecommerce_flow(driver, url, title, categories, max_iterations=2, worker_id=worker_id)
             if iterative_addresses:
                 addresses = iterative_addresses
                 print(f"✅ [{worker_id}] Iterative flow in immediate processing found {len(addresses)} addresses!")
@@ -6654,7 +6723,7 @@ def ai_solve_captcha_enhanced(driver):
             print("   -> ✅ Interactive captcha solving successful")
             return True
         
-        # Step 5: Only if all basic methods fail, try AI methods (API calls)
+        # Step 5: Try AI methods (API calls)
         if check_api_quota():
             print("   -> All basic methods failed, trying AI methods...")
             
@@ -7234,7 +7303,7 @@ def handle_api_quota_error(function_name="Unknown"):
     
     return True
 
-def smart_iterative_ecommerce_flow(driver, url, title, categories, max_iterations=5):
+def smart_iterative_ecommerce_flow(driver, url, title, categories, max_iterations=5, worker_id=None):
     """
     Smart iterative e-commerce flow handler that tries multiple approaches
     to navigate complex purchase flows until addresses are found.
@@ -7299,6 +7368,19 @@ def smart_iterative_ecommerce_flow(driver, url, title, categories, max_iteration
                 time.sleep(2)
                 scroll_entire_page(driver)
                 time.sleep(1)
+                
+                # Check for and handle email modals that might appear after clicking buy
+                print(f"   🔍 Checking for email modals after buy button click...")
+                modal_context = {
+                    "trigger_action": "navbar_buy_click",
+                    "page_state": "post_buy_click",
+                    "expected_behavior": "email_collection_for_purchase"
+                }
+                modal_handled = try_handle_generic_email_modal_with_retries(driver, worker_id, modal_context)
+                if modal_handled:
+                    print(f"   ✅ Email modal handled successfully after buy click")
+                    time.sleep(2)  # Wait for modal submission to process
+                
                 addresses_found = extract_addresses_enhanced(driver.page_source, url, title)
                 if addresses_found:
                     print(f"✅ Found {len(addresses_found)} addresses after navbar buy click")
@@ -7330,6 +7412,18 @@ def smart_iterative_ecommerce_flow(driver, url, title, categories, max_iteration
             if action_success:
                 print(f"   ✅ Action '{best_action}' completed successfully")
                 
+                # Check for and handle email modals that might appear after any action
+                print(f"   🔍 Checking for email modals after '{best_action}' action...")
+                modal_context = {
+                    "trigger_action": best_action,
+                    "page_state": f"post_{best_action}",
+                    "expected_behavior": "email_collection_or_verification"
+                }
+                modal_handled = try_handle_generic_email_modal_with_retries(driver, worker_id, modal_context)
+                if modal_handled:
+                    print(f"   ✅ Email modal handled successfully after '{best_action}' action")
+                    time.sleep(2)  # Wait for modal submission to process
+                
                 # Special handling: if we successfully added to cart, try to proceed to checkout
                 if best_action == "add_to_cart":
                     print("   🛒 Item added to cart, attempting to proceed to checkout...")
@@ -7340,6 +7434,18 @@ def smart_iterative_ecommerce_flow(driver, url, title, categories, max_iteration
                     if checkout_success:
                         print("   ✅ Proceeded to checkout page")
                         time.sleep(MEDIUM_WAIT)
+                        
+                        # Check for modals again after checkout click
+                        print(f"   🔍 Checking for email modals after checkout click...")
+                        checkout_modal_context = {
+                            "trigger_action": "checkout_click",
+                            "page_state": "checkout_page",
+                            "expected_behavior": "email_collection_for_checkout"
+                        }
+                        checkout_modal_handled = try_handle_generic_email_modal_with_retries(driver, worker_id, checkout_modal_context)
+                        if checkout_modal_handled:
+                            print(f"   ✅ Email modal handled successfully after checkout click")
+                            time.sleep(2)
                         
                         # Now try to complete the checkout process
                         checkout_completed = ai_handle_checkout_form(driver, url, categories)
@@ -8024,7 +8130,7 @@ def click_elements_by_text(driver, text_options):
                         for button in buttons:
                             if text.lower() in button.text.lower():
                                 if button.is_displayed() and button.is_enabled():
-                                    driver.execute_script("arguments[0].click();", button)
+                                    button.click()
                                     print(f"        Clicked (CSS): {button.text[:30]}")
                                     return True
                     except:
@@ -8427,6 +8533,215 @@ def try_navbar_buy_button(driver):
                     return True
     except Exception as e:
         print(f"⚠️ Fallback button clicks failed: {e}")
+    return False
+
+def handle_generic_email_modal(driver, context):
+    """
+    Handle generic email modal by looking for email inputs and submit buttons.
+    Returns True if modal was handled, False otherwise.
+    """
+    try:
+        print(f"🔍 [Modal Handler] Starting modal detection for context: {context}")
+        
+        # Look for common modal selectors
+        modal_selectors = [
+            '#blockoPayModal',  # Specific to this site
+            '.modal', '.popup', '.overlay', '.dialog', '[role="dialog"]',
+            '.lightbox', '.modal-dialog', '.modal-content'
+        ]
+        
+        for selector in modal_selectors:
+            try:
+                print(f"🔍 [Modal Handler] Checking selector: {selector}")
+                modals = driver.find_elements(By.CSS_SELECTOR, selector)
+                for modal in modals:
+                    if modal.is_displayed():
+                        print(f"🎯 [Modal Handler] Found visible modal with selector: {selector}")
+                        # Look for email input in the modal
+                        email_inputs = modal.find_elements(By.XPATH, 
+                            ".//input[@type='email'] | .//input[contains(@placeholder, 'email')] | .//input[contains(@placeholder, 'mail')]")
+                        
+                        if email_inputs:
+                            email_input = email_inputs[0]
+                            print(f"📝 [Modal Handler] Found email input in modal")
+                            
+                            # Generate email
+                            timestamp = int(time.time())
+                            random_suffix = get_random_suffix()
+                            email = f'user_{timestamp}_{random_suffix}@protonmail.com'
+                            print(f"📧 [Modal Handler] Generated email: {email}")
+                            
+                            # Fill email with slow typing
+                            print(f"⏳ [Modal Handler] Clearing email field...")
+                            email_input.clear()
+                            time.sleep(1)  # Wait 1 second after clearing
+                            
+                            print(f"⌨️ [Modal Handler] Typing email character by character...")
+                            for i, char in enumerate(email):
+                                email_input.send_keys(char)
+                                print(f"   Typed character {i+1}/{len(email)}: '{char}'")
+                                time.sleep(0.3)  # 300ms delay between characters
+                            
+                            print(f"✅ [Modal Handler] Email field filled successfully")
+                            time.sleep(2)  # Wait 2 seconds to see the filled email
+                            
+                            # Verify the email was entered correctly
+                            entered_value = email_input.get_attribute('value')
+                            print(f"🔍 [Modal Handler] Email field contains: '{entered_value}'")
+                            
+                            # Look for submit button
+                            submit_buttons = modal.find_elements(By.XPATH,
+                                ".//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'submit')] | " +
+                                ".//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'send')] | " +
+                                ".//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'continue')] | " +
+                                ".//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ok')] | " +
+                                ".//input[@type='submit'] | .//button[@type='submit']")
+                            
+                            if submit_buttons:
+                                submit_button = submit_buttons[0]
+                                print(f"🔘 [Modal Handler] Found submit button: {submit_button.text[:30]}")
+                                print(f"⏰ [Modal Handler] Waiting 5 seconds before clicking submit button...")
+                                time.sleep(5)  # Wait 5 seconds before clicking
+                                
+                                print(f"🖱️ [Modal Handler] Clicking submit button now...")
+                                submit_button.click()
+                                print(f"✅ [Modal Handler] Submit button clicked successfully")
+                                time.sleep(3)  # Wait for modal to close
+                                return True
+                            else:
+                                # Try pressing Enter on the email input
+                                print(f"⌨️ [Modal Handler] No submit button found, pressing Enter key...")
+                                time.sleep(2)  # Wait 2 seconds before pressing Enter
+                                email_input.send_keys(Keys.RETURN)
+                                print(f"✅ [Modal Handler] Pressed Enter key on email input")
+                                time.sleep(3)  # Wait for response
+                                return True
+            except Exception as e:
+                print(f"⚠️ [Modal Handler] Error with selector {selector}: {e}")
+                continue
+        
+        # If no modal found, look for email inputs anywhere on the page
+        print(f"🔍 [Modal Handler] No modal found, checking for email inputs anywhere on page...")
+        email_inputs = driver.find_elements(By.XPATH, 
+            "//input[@type='email'] | //input[contains(@placeholder, 'email')] | //input[contains(@placeholder, 'mail')]")
+        
+        if email_inputs:
+            email_input = email_inputs[0]
+            if email_input.is_displayed():
+                print(f"📝 [Modal Handler] Found standalone email input")
+                
+                # Generate email
+                timestamp = int(time.time())
+                random_suffix = get_random_suffix()
+                email = f'user_{timestamp}_{random_suffix}@protonmail.com'
+                print(f"📧 [Modal Handler] Generated email: {email}")
+                
+                # Fill email with slow typing
+                print(f"⏳ [Modal Handler] Clearing email field...")
+                email_input.clear()
+                time.sleep(1)  # Wait 1 second after clearing
+                
+                print(f"⌨️ [Modal Handler] Typing email character by character...")
+                for i, char in enumerate(email):
+                    email_input.send_keys(char)
+                    print(f"   Typed character {i+1}/{len(email)}: '{char}'")
+                    time.sleep(0.3)  # 300ms delay between characters
+                
+                print(f"✅ [Modal Handler] Email field filled successfully")
+                time.sleep(2)  # Wait 2 seconds to see the filled email
+                
+                # Verify the email was entered correctly
+                entered_value = email_input.get_attribute('value')
+                print(f"🔍 [Modal Handler] Email field contains: '{entered_value}'")
+                
+                # Look for nearby submit button
+                try:
+                    parent_form = email_input.find_element(By.XPATH, "./ancestor::form")
+                    if parent_form:
+                        submit_buttons = parent_form.find_elements(By.XPATH,
+                            ".//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'submit')] | " +
+                            ".//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'send')] | " +
+                            ".//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'continue')] | " +
+                            ".//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ok')] | " +
+                            ".//input[@type='submit'] | .//button[@type='submit']")
+                        
+                        if submit_buttons:
+                            submit_button = submit_buttons[0]
+                            print(f"🔘 [Modal Handler] Found submit button in form: {submit_button.text[:30]}")
+                            print(f"⏰ [Modal Handler] Waiting 5 seconds before clicking submit button...")
+                            time.sleep(5)  # Wait 5 seconds before clicking
+                            
+                            print(f"🖱️ [Modal Handler] Clicking submit button now...")
+                            submit_button.click()
+                            print(f"✅ [Modal Handler] Submit button clicked successfully")
+                            time.sleep(3)  # Wait for response
+                            return True
+                except:
+                    pass
+                
+                # Try pressing Enter
+                print(f"⌨️ [Modal Handler] No submit button found, pressing Enter key...")
+                time.sleep(2)  # Wait 2 seconds before pressing Enter
+                email_input.send_keys(Keys.RETURN)
+                print(f"✅ [Modal Handler] Pressed Enter key on email input")
+                time.sleep(3)  # Wait for response
+                return True
+        
+        print(f"❌ [Modal Handler] No email inputs found anywhere on page")
+        return False
+        
+    except Exception as e:
+        print(f"❌ [Modal Handler] Error: {e}")
+        return False
+
+def try_handle_generic_email_modal_with_retries(driver, worker_id, context):
+    """
+    Try to handle generic email modal up to 3 times with 2s wait between attempts. Logs each attempt.
+    Fallback: fill all visible inputs and try to click a submit/payment button.
+    """
+    print(f"🔄 [Modal Retry Handler] Starting modal detection with retries for context: {context}")
+    
+    for attempt in range(1, 4):
+        print(f"🛠️ [Modal Retry Handler] Attempt {attempt}/3: Checking for generic email modal after {context}...")
+        time.sleep(2)
+        try:
+            if handle_generic_email_modal(driver, context):
+                print(f"✅ [Modal Retry Handler] Generic email modal handled after {context} (attempt {attempt}).")
+                return True
+            else:
+                print(f"🛠️ [Modal Retry Handler] No generic email modal found after {context} (attempt {attempt}).")
+        except Exception as e:
+            print(f"⚠️ [Modal Retry Handler] Error in generic email modal handler after {context} (attempt {attempt}): {e}")
+    
+    # Fallback: fill all visible inputs and try to click a submit/payment button
+    print(f"🔄 [Modal Retry Handler] No modal/email handled after retries for {context}. Trying fallback approach...")
+    print(f"🔄 [Modal Retry Handler] Attempting to fill all visible inputs...")
+    fields_filled = fill_visible_inputs_anywhere(driver)
+    if fields_filled > 0:
+        print(f"✅ [Modal Retry Handler] Filled {fields_filled} visible input fields. Attempting to click a submit/payment button...")
+        buttons = driver.find_elements(By.XPATH, "//button | //input[@type='submit'] | //input[@type='button']")
+        for btn in buttons:
+            try:
+                if btn.is_displayed() and btn.is_enabled():
+                    btn_text = (btn.text or btn.get_attribute('value') or '').lower()
+                    if any(word in btn_text for word in ['pay', 'submit', 'buy', 'send', 'continue', 'ok', 'download']):
+                        print(f"🔘 [Modal Retry Handler] Found suitable button: {btn_text}")
+                        print(f"⏰ [Modal Retry Handler] Waiting 3 seconds before clicking fallback button...")
+                        time.sleep(3)  # Wait 3 seconds before clicking
+                        
+                        print(f"🖱️ [Modal Retry Handler] Clicking fallback button now...")
+                        btn.click()
+                        print(f"✅ [Modal Retry Handler] Fallback button clicked successfully: {btn_text}")
+                        time.sleep(2)  # Wait for response
+                        return True
+            except Exception as e:
+                print(f"⚠️ [Modal Retry Handler] Could not click button: {e}")
+                continue
+        print(f"❌ [Modal Retry Handler] No suitable button found to click after filling inputs.")
+    else:
+        print(f"❌ [Modal Retry Handler] No visible input fields were filled.")
+    
+    print(f"❌ [Modal Retry Handler] All modal handling attempts failed for context: {context}")
     return False
 
 # Utility to detect Chrome's built-in network error pages so we can abort early.
