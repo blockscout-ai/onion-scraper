@@ -625,6 +625,26 @@ KEYWORDS = [
     'virgin', 'first time', 'deflower', 'defloration', 'pure', 'clean', 'fresh', 'new',
     'underage', 'minor', 'juvenile', 'youth', 'adolescent', 'pubescent', 'prepubescent',
     
+    # New high-priority CSAM terms
+    'incest', 'loli', 'preteen', 'pedo', 'kids', 'young models', 'skype privats',
+    'cp videos 2025', 'cp videos 2024', 'cp videos 2023', 'cp videos 2022', 'cp videos 2021',
+    
+    # Russian CSAM terms (critical for discovery)
+    'детское порно', 'школьницы', 'инцесты', 'малолетки', 'приваты', 'детское видео',
+    'детские фото', 'детские картинки', 'детские клипы', 'детские фильмы',
+    'школьница', 'школьник', 'школьные', 'школьное', 'школьный', 'школьная',
+    'малолетка', 'малолетки', 'малолетний', 'малолетняя', 'малолетние',
+    'инцест', 'инцесты', 'инцестный', 'инцестная', 'инцестные',
+    'приват', 'приваты', 'приватный', 'приватная', 'приватные',
+    'детское', 'детская', 'детский', 'детские', 'детский контент',
+    'детское видео', 'детские видео', 'детское фото', 'детские фото',
+    'детское порно видео', 'детское порно фото', 'детское порно картинки',
+    'детское порно клипы', 'детское порно фильмы', 'детское порно ролики',
+    'школьницы порно', 'школьники порно', 'школьное порно',
+    'малолетки порно', 'малолетнее порно', 'малолетний порно',
+    'инцест порно', 'инцестное порно', 'инцестный порно',
+    'приваты порно', 'приватное порно', 'приватный порно',
+    
 # Trafficking and exploitation terms
     'child exploitation', 'minor exploitation', 'youth exploitation', 'teen exploitation', 
     'girl exploitation', 'boy exploitation', 'child prostitution', 'teen prostitution', 
@@ -1172,7 +1192,10 @@ def generate_smart_search_queries():
     smart_queries = []
     
     # Primary high-value keywords (CSAM specific)
-    primary_keywords = ['cp', 'loli', 'child', 'teen', 'minor', 'preteen', 'lolita', 'pedo', 'map']
+    primary_keywords = ['cp', 'loli', 'child', 'teen', 'minor', 'preteen', 'lolita', 'pedo', 'map', 'incest', 'kids', 'young models', 'skype privats']
+    
+    # Russian primary keywords (critical for discovery)
+    russian_primary_keywords = ['детское порно', 'школьницы', 'инцесты', 'малолетки', 'приваты', 'детское видео', 'школьница', 'малолетка', 'инцест', 'приват']
     
     # Secondary descriptive keywords
     secondary_keywords = ['porn', 'video', 'gallery', 'access', 'view', 'watch', 'download', 'stream']
@@ -1194,6 +1217,9 @@ def generate_smart_search_queries():
     
     # 1. Single primary keywords (high precision)
     smart_queries.extend(primary_keywords)
+    
+    # 1.5. Russian primary keywords (critical for discovery)
+    smart_queries.extend(russian_primary_keywords)
     
     # 2. Primary + Secondary combinations (medium precision, high recall)
     for primary in primary_keywords:
@@ -1234,7 +1260,25 @@ def generate_smart_search_queries():
     smart_queries.extend([
         'child porn', 'child video', 'teen porn', 'minor porn', 'preteen porn',
         'loli porn', 'lolita porn', 'child gallery', 'teen gallery', 'minor gallery',
-        'pedo porn', 'map porn', 'pedophile porn', 'minor attracted person'
+        'pedo porn', 'map porn', 'pedophile porn', 'minor attracted person',
+        'incest porn', 'kids porn', 'young models porn', 'skype privats porn',
+        'cp videos 2025', 'cp videos 2024', 'cp videos 2023', 'cp videos 2022', 'cp videos 2021'
+    ])
+    
+    # 8.5. Russian multi-word combinations (critical for discovery)
+    smart_queries.extend([
+        'детское порно видео', 'детское порно фото', 'детское порно картинки',
+        'детское порно клипы', 'детское порно фильмы', 'детское порно ролики',
+        'школьницы порно', 'школьники порно', 'школьное порно',
+        'малолетки порно', 'малолетнее порно', 'малолетний порно',
+        'инцест порно', 'инцестное порно', 'инцестный порно',
+        'приваты порно', 'приватное порно', 'приватный порно',
+        'детское видео', 'детские видео', 'детское фото', 'детские фото',
+        'детские картинки', 'детские клипы', 'детские фильмы',
+        'школьница видео', 'школьница фото', 'школьница картинки',
+        'малолетка видео', 'малолетка фото', 'малолетка картинки',
+        'инцест видео', 'инцест фото', 'инцест картинки',
+        'приват видео', 'приват фото', 'приват картинки'
     ])
     
     # 9. Action-oriented queries
@@ -1242,7 +1286,20 @@ def generate_smart_search_queries():
         'watch child', 'view child', 'download child', 'stream child',
         'watch teen', 'view teen', 'download teen', 'stream teen',
         'watch loli', 'view loli', 'download loli', 'stream loli',
-        'access child', 'access teen', 'access loli', 'access minor'
+        'access child', 'access teen', 'access loli', 'access minor',
+        'watch incest', 'view incest', 'download incest', 'stream incest',
+        'watch kids', 'view kids', 'download kids', 'stream kids',
+        'watch young models', 'view young models', 'download young models', 'stream young models'
+    ])
+    
+    # 9.5. Russian action-oriented queries (critical for discovery)
+    smart_queries.extend([
+        'смотреть детское порно', 'смотреть школьницы', 'смотреть малолетки', 'смотреть инцест', 'смотреть приваты',
+        'скачать детское порно', 'скачать школьницы', 'скачать малолетки', 'скачать инцест', 'скачать приваты',
+        'загрузить детское порно', 'загрузить школьницы', 'загрузить малолетки', 'загрузить инцест', 'загрузить приваты',
+        'доступ детское порно', 'доступ школьницы', 'доступ малолетки', 'доступ инцест', 'доступ приваты',
+        'купить детское порно', 'купить школьницы', 'купить малолетки', 'купить инцест', 'купить приваты',
+        'найти детское порно', 'найти школьницы', 'найти малолетки', 'найти инцест', 'найти приваты'
     ])
     
     # 10. Forum/community focused queries
@@ -1250,7 +1307,17 @@ def generate_smart_search_queries():
         'child forum', 'teen forum', 'loli forum', 'minor forum',
         'child board', 'teen board', 'loli board', 'minor board',
         'child community', 'teen community', 'loli community',
-        'pedo forum', 'map forum', 'pedophile forum', 'minor attracted person forum'
+        'pedo forum', 'map forum', 'pedophile forum', 'minor attracted person forum',
+        'incest forum', 'kids forum', 'young models forum', 'skype privats forum'
+    ])
+    
+    # 10.5. Russian forum/community focused queries (critical for discovery)
+    smart_queries.extend([
+        'форум детское порно', 'форум школьницы', 'форум малолетки', 'форум инцест', 'форум приваты',
+        'доска детское порно', 'доска школьницы', 'доска малолетки', 'доска инцест', 'доска приваты',
+        'сообщество детское порно', 'сообщество школьницы', 'сообщество малолетки', 'сообщество инцест', 'сообщество приваты',
+        'чат детское порно', 'чат школьницы', 'чат малолетки', 'чат инцест', 'чат приваты',
+        'группа детское порно', 'группа школьницы', 'группа малолетки', 'группа инцест', 'группа приваты'
     ])
     
     # 11. Market/shop focused queries
@@ -1258,7 +1325,18 @@ def generate_smart_search_queries():
         'child market', 'teen market', 'loli market', 'minor market',
         'child shop', 'teen shop', 'loli shop', 'minor shop',
         'child store', 'teen store', 'loli store', 'minor store',
-        'pedo market', 'map market', 'pedophile market', 'minor attracted person market'
+        'pedo market', 'map market', 'pedophile market', 'minor attracted person market',
+        'incest market', 'kids market', 'young models market', 'skype privats market'
+    ])
+    
+    # 11.5. Russian market/shop focused queries (critical for discovery)
+    smart_queries.extend([
+        'магазин детское порно', 'магазин школьницы', 'магазин малолетки', 'магазин инцест', 'магазин приваты',
+        'рынок детское порно', 'рынок школьницы', 'рынок малолетки', 'рынок инцест', 'рынок приваты',
+        'лавка детское порно', 'лавка школьницы', 'лавка малолетки', 'лавка инцест', 'лавка приваты',
+        'торговля детское порно', 'торговля школьницы', 'торговля малолетки', 'торговля инцест', 'торговля приваты',
+        'продажа детское порно', 'продажа школьницы', 'продажа малолетки', 'продажа инцест', 'продажа приваты',
+        'покупка детское порно', 'покупка школьницы', 'покупка малолетки', 'покупка инцест', 'покупка приваты'
     ])
     
     # 12. Law Enforcement - Specific trafficking queries
