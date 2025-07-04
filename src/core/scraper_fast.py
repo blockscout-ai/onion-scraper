@@ -30,6 +30,7 @@ from solders.pubkey import Pubkey
 import chromedriver_autoinstaller
 import json
 import random
+import string
 import openai
 import anthropic
 import io
@@ -37,6 +38,11 @@ import socket
 import gspread
 import shutil
 import tempfile
+
+# ---[ UTILITY FUNCTIONS ]---
+def get_random_suffix(length=5):
+    """Generate a random suffix for unique usernames and names"""
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 # === AGENT SYSTEM INTEGRATION ===
 import sys
@@ -206,7 +212,12 @@ load_env_file()
 chromedriver_autoinstaller.install()
 
 # ---[ Enhanced AI Configuration ]---
-from config import OPENAI_API_KEY, ANTHROPIC_API_KEY
+import sys
+import os
+# Add project root to Python path for config import
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, project_root)
+from config.config import OPENAI_API_KEY, ANTHROPIC_API_KEY
 
 # Enhanced AI models for better intelligence
 AI_MODELS = {
@@ -266,7 +277,7 @@ ROTATE_EVERY_N = 33  # More frequent rotation for better anonymity
 
 # ---[ MULTI-INPUT FILE CONFIGURATION ]---
 # Primary input file for new URLs
-PRIMARY_INPUT_CSV = "discovered_onions_20250625.csv"
+PRIMARY_INPUT_CSV = "human_trafficking_alerts_0702.csv"
 
 # Secondary input file for re-scraping (CSAM sites only)
 SECONDARY_INPUT_CSV = "crypto_addresses_fast.csv"
@@ -284,16 +295,16 @@ input_rotation_lock = threading.Lock()
 # Resume configuration - set to start from a specific row (1-based indexing)
 # Set START_FROM_ROW = 1 to start from the beginning
 # Set START_FROM_ROW = N to start from row N (where N is the row number in the CSV)
-START_FROM_ROW = 13090  # Currently set to start from row 3233
+START_FROM_ROW = 1  # Currently set to start from row 3233
 OUTPUT_CSV = "crypto_addresses_fast.csv"
 SCREENSHOT_DIR = "screenshots_fast"
 CAPTCHA_FAILED_CSV = "captcha_failed_fast.csv"
 UNSOLVED_DIR = "unsolved_captchas_fast"
 MAX_DEPTH = 4  # Reduced for speed
 PAGE_LOAD_TIMEOUT = 45  # Reduced to avoid Chrome internal limits
-MAX_WORKERS = 12  # Reduced to prevent DevTools port conflicts on macOS
+MAX_WORKERS = 1  # Reduced to prevent DevTools port conflicts on macOS
 FAST_MODE = True
-HEADLESS_MODE = True  # Changed to False to watch browser
+HEADLESS_MODE = False  # Changed to False to watch browser
 BATCH_SIZE = 20  # Batch CSV writes
 
 # Enhanced safety and reliability settings
@@ -2429,9 +2440,10 @@ def ai_generate_fake_user():
     except Exception as e:
         # Fallback with comprehensive fake data
         import random, string
-        username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+        random_suffix = get_random_suffix()
+        username = f'user_{int(time.time())}_{random_suffix}'
         password = ''.join(random.choices(string.ascii_letters + string.digits + '!@#$%^&*', k=14))
-        email = username + '@protonmail.com'
+        email = f'{username}@protonmail.com'
         btc_address = '1' + ''.join(random.choices(string.ascii_lowercase + string.digits, k=33))
         pin = ''.join(random.choices(string.digits, k=4))
         invite_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
@@ -2698,13 +2710,14 @@ def enhanced_registration_form_fill(driver, form, url):
         # Generate registration data
         import time
         timestamp = int(time.time())
+        random_suffix = get_random_suffix()
         registration_data = {
-            'username': f'user_{timestamp}',
-            'email': f'user_{timestamp}@protonmail.com',
+            'username': f'user_{timestamp}_{random_suffix}',
+            'email': f'user_{timestamp}_{random_suffix}@protonmail.com',
             'password': 'SecurePass123!',
             'confirm_password': 'SecurePass123!',
-            'first_name': 'John',
-            'last_name': 'Doe',
+            'first_name': f'John{random_suffix}',
+            'last_name': f'Doe{random_suffix}',
             'age': '25',
             'agree': True,
             'terms': True,
@@ -2848,9 +2861,10 @@ def enhanced_registration_input_fill(driver, inputs, url):
         # Generate registration data
         import time
         timestamp = int(time.time())
+        random_suffix = get_random_suffix()
         registration_data = {
-            'username': f'user_{timestamp}',
-            'email': f'user_{timestamp}@protonmail.com',
+            'username': f'user_{timestamp}_{random_suffix}',
+            'email': f'user_{timestamp}_{random_suffix}@protonmail.com',
             'password': 'SecurePass123!',
         }
         
@@ -3539,11 +3553,12 @@ def enhanced_form_fill(driver, form, url, form_type):
         print("        Enhanced form filling...")
         
         # Enhanced fake data for checkout
+        random_suffix = get_random_suffix()
         checkout_data = {
-            'email': 'john.doe@protonmail.com',
-            'firstname': 'John',
-            'lastname': 'Doe',
-            'fullname': 'John Doe',
+            'email': f'john.doe{random_suffix}@protonmail.com',
+            'firstname': f'John{random_suffix}',
+            'lastname': f'Doe{random_suffix}',
+            'fullname': f'John Doe {random_suffix}',
             'company': 'Tech Corp',
             'address1': '123 Main Street',
             'address2': 'Apt 4B',
@@ -4472,9 +4487,10 @@ def attempt_form_fill(driver, form, url, form_type):
     """Attempt to fill any form with fake data, covering all common fields"""
     try:
         # Expanded fake user data
+        random_suffix = get_random_suffix()
         creds = {
-            'username': f'user_{int(time.time())}',
-            'email': f'user_{int(time.time())}@example.com',
+            'username': f'user_{int(time.time())}_{random_suffix}',
+            'email': f'user_{int(time.time())}_{random_suffix}@example.com',
             'password': 'password123',
             'btc_address': 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
             'pin': '1234',
@@ -4483,9 +4499,9 @@ def attempt_form_fill(driver, form, url, form_type):
             'telegram': '@user123',
             'age': '25',
             'country': 'US',
-            'firstname': 'John',
-            'lastname': 'Doe',
-            'fullname': 'John Doe',
+            'firstname': f'John{random_suffix}',
+            'lastname': f'Doe{random_suffix}',
+            'fullname': f'John Doe {random_suffix}',
             'address1': '123 Main St',
             'address2': 'Apt 4B',
             'street': '123 Main St',
@@ -4656,9 +4672,10 @@ def attempt_input_fill(driver, inputs, url, form_type):
     """Attempt to fill any input fields that look like forms"""
     try:
         # Try basic fake user generation first (no API calls)
+        random_suffix = get_random_suffix()
         basic_creds = {
-            'username': f'user_{int(time.time())}',
-            'email': f'user_{int(time.time())}@example.com',
+            'username': f'user_{int(time.time())}_{random_suffix}',
+            'email': f'user_{int(time.time())}_{random_suffix}@example.com',
             'password': 'password123',
             'btc_address': 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
             'pin': '1234',
