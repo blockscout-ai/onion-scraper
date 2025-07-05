@@ -171,6 +171,65 @@ except ImportError:
     print("⚠️ Metrics tracking system not available - continuing without metrics")
     metrics_tracker = None
 
+# === GOOGLE DRIVE UPLOAD SYSTEM ===
+try:
+    from scripts.utilities.gdrive_screenshot_manager import GoogleDriveScreenshotManager
+    # Initialize Google Drive manager for real-time uploads
+    GDRIVE_SERVICE_ACCOUNT = '/Users/jasoncomer/Downloads/ofac-automation-234e5a9169fd.json'
+    GDRIVE_FOLDER_ID = "1X5iXBO1AtQ8-VHK5cdVQkwkNByEnATSa"
+    gdrive_manager = GoogleDriveScreenshotManager(
+        service_account_file=GDRIVE_SERVICE_ACCOUNT, 
+        folder_id=GDRIVE_FOLDER_ID
+    )
+    if gdrive_manager.drive_service:
+        print("☁️ Google Drive upload system initialized - real-time uploads enabled")
+        REALTIME_GDRIVE_UPLOAD = True
+    else:
+        print("⚠️ Google Drive upload system failed to initialize - continuing without uploads")
+        REALTIME_GDRIVE_UPLOAD = False
+except ImportError:
+    print("⚠️ Google Drive upload system not available - continuing without uploads")
+    REALTIME_GDRIVE_UPLOAD = False
+    gdrive_manager = None
+
+def upload_screenshot_to_gdrive_realtime(screenshot_path, url=None, entity_name=None, worker_id=None):
+    """
+    Upload screenshot to Google Drive in real-time while keeping local copy.
+    This runs in a separate thread to avoid blocking the scraper.
+    
+    Args:
+        screenshot_path (str): Path to local screenshot file
+        url (str): URL where screenshot was taken
+        entity_name (str): Name of the entity/site
+        worker_id (str): Worker ID for logging
+        
+    Returns:
+        bool: True if upload was successful or queued, False if failed
+    """
+    if not REALTIME_GDRIVE_UPLOAD or not gdrive_manager:
+        return False
+    
+    if not os.path.exists(screenshot_path):
+        return False
+    
+    try:
+        # Upload to Google Drive (non-blocking)
+        result = gdrive_manager.upload_screenshot(screenshot_path, entity_name, url)
+        
+        if result['success']:
+            if worker_id:
+                print(f"☁️ [{worker_id}] Real-time upload successful: {os.path.basename(screenshot_path)}")
+            return True
+        else:
+            if worker_id:
+                print(f"⚠️ [{worker_id}] Real-time upload failed: {result.get('error', 'Unknown error')}")
+            return False
+            
+    except Exception as e:
+        if worker_id:
+            print(f"⚠️ [{worker_id}] Real-time upload error: {e}")
+        return False
+
 # ---[ Load Environment Variables ]---
 def load_env_file():
     """Load environment variables from .env file if it exists"""
@@ -2335,6 +2394,8 @@ def process_url_fast(url, worker_id):
                         success = highlight_address_on_screenshot(driver, addr, screenshot_path)
                         if success:
                             print(f"✅ [{worker_id}] Highlighted screenshot saved: {screenshot_name}")
+                            # Upload to Google Drive in real-time (keeps local copy)
+                            upload_screenshot_to_gdrive_realtime(screenshot_path, url, display_title, worker_id)
                         else:
                             print(f"❌ [{worker_id}] Screenshot failed")
                             screenshot_path = "screenshot_failed.png"
@@ -2425,6 +2486,8 @@ def process_url_fast(url, worker_id):
                                 success = highlight_address_on_screenshot(external_driver, addr, screenshot_path)
                                 if success:
                                     print(f"✅ [{worker_id}] Highlighted screenshot saved: {screenshot_name}")
+                                    # Upload to Google Drive in real-time (keeps local copy)
+                                    upload_screenshot_to_gdrive_realtime(screenshot_path, external_url, external_title, worker_id)
                                 else:
                                     print(f"❌ [{worker_id}] Screenshot failed")
                                     screenshot_path = "screenshot_failed.png"
@@ -2537,6 +2600,8 @@ def process_url_fast(url, worker_id):
                                 success = highlight_address_on_screenshot(driver, addr, screenshot_path)
                                 if success:
                                     print(f"✅ [{worker_id}] Highlighted screenshot saved: {screenshot_name}")
+                                    # Upload to Google Drive in real-time (keeps local copy)
+                                    upload_screenshot_to_gdrive_realtime(screenshot_path, link_url, title, worker_id)
                                 else:
                                     print(f"❌ [{worker_id}] Screenshot failed")
                                     screenshot_path = "screenshot_failed.png"
@@ -5892,6 +5957,8 @@ def process_url_immediately(url, worker_id, priority="HIGH"):
                     success = highlight_address_on_screenshot(driver, addr, addr_screenshot_path)
                     if success:
                         print(f"✅ [{worker_id}] Address screenshot: {addr_screenshot_name}")
+                        # Upload to Google Drive in real-time (keeps local copy)
+                        upload_screenshot_to_gdrive_realtime(addr_screenshot_path, url, title, worker_id)
                     else:
                         addr_screenshot_path = "screenshot_failed.png"
                 except Exception as e:
