@@ -510,7 +510,7 @@ input_rotation_lock = threading.Lock()
 # Resume configuration - set to start from a specific row (1-based indexing)
 # Set START_FROM_ROW = 1 to start from the beginning
 # Set START_FROM_ROW = N to start from row N (where N is the row number in the CSV)
-START_FROM_ROW = 337  # Currently set to start from row 3233
+START_FROM_ROW = 926  # Currently set to start from row 3233
 OUTPUT_CSV = "data/raw/crypto_addresses_fast.csv"
 SCREENSHOT_DIR = "data/raw/screenshots_fast"
 CAPTCHA_FAILED_CSV = "data/raw/captcha_failed_fast.csv"
@@ -676,16 +676,22 @@ CATEGORY_KEYWORDS = {
         "escort service proprietor", "escort service entrepreneur", "escort service business owner"
     ],
     
-    # CSAM - SECOND HIGHEST PRIORITY
+    # CSAM - SECOND HIGHEST PRIORITY (Refined to reduce false positives)
     "csam": [
-        "child", "loli", "boys", "girls", "teen", "young", "minor", "child porn", "childxxx", 
-        "preteen", "lolita", "loliporn", "child exploitation", "minor exploitation", "youth exploitation",
-        "teen exploitation", "girl exploitation", "boy exploitation", "child prostitution", 
-        "teen prostitution", "minor prostitution", "forced prostitution", "coerced prostitution",
-        "trafficked person", "trafficked girl", "trafficked boy", "trafficked child", "trafficked teen",
-        "trafficked minor", "victim of trafficking", "trafficking victim", "exploitation victim",
-        "abuse victim", "sexual abuse", "child abuse", "teen abuse", "minor abuse", "youth abuse",
+        # Explicit CSAM terms (highest priority)
+        "loli", "loliporn", "lolita", "child porn", "childxxx", "preteen", "child exploitation",
+        "minor exploitation", "youth exploitation", "teen exploitation", "girl exploitation", 
+        "boy exploitation", "child prostitution", "teen prostitution", "minor prostitution", 
+        "forced prostitution", "coerced prostitution", "trafficked person", "trafficked girl", 
+        "trafficked boy", "trafficked child", "trafficked teen", "trafficked minor", 
+        "victim of trafficking", "trafficking victim", "exploitation victim", "abuse victim", 
+        "sexual abuse", "child abuse", "teen abuse", "minor abuse", "youth abuse",
         "commercial sexual exploitation", "csec", "commercial sex", "sex work", "prostitution",
+        
+        # Age-specific exploitation terms (context-dependent)
+        "13yo", "14yo", "15yo", "16yo", "17yo", "underage", "barely legal",
+        
+        # Escort terms (only when combined with age indicators or explicit CSAM context)
         "escort service", "escort agency", "escort business", "escort company", "escort provider",
         "escort supplier", "escort vendor", "escort seller", "escort trader", "escort dealer",
         "escort broker", "escort agent", "escort manager", "escort operator", "escort owner",
@@ -791,6 +797,10 @@ CATEGORY_KEYWORDS = {
         "fake generator", "fake hack", "fake exploit", "fake cracker",
         # Scam databases and lists
         "scam list", "scam database", "scam dump", "scam leak",
+        
+        # Money transfer scams
+        "western union hack", "western union", "moneygram hack", "moneygram",
+        "money transfer hack", "transfer hack", "wire transfer hack",
         
         # Multiplier scams (100x, 1000x, etc.)
         "100x your coins", "1000x your coins", "10x your coins", "50x your coins",
@@ -1299,7 +1309,57 @@ def get_or_set_root_title(url, current_title):
         print(f"⚠️ Error in get_or_set_root_title: {e}")
         return current_title
 
-def wait_for_title_to_load(driver, timeout=15):
+def extract_better_title(soup, url):
+    """Extract a better title from multiple sources when the main title is poor"""
+    try:
+        # Try meta description first
+        meta_desc = soup.find('meta', attrs={'name': 'description'})
+        if meta_desc and meta_desc.get('content'):
+            desc = meta_desc.get('content').strip()
+            if len(desc) > 10 and not desc.endswith('.onion'):
+                return desc
+        
+        # Try h1 tag
+        h1_tag = soup.find('h1')
+        if h1_tag and h1_tag.get_text().strip():
+            h1_text = h1_tag.get_text().strip()
+            if len(h1_text) > 5 and not h1_text.endswith('.onion'):
+                return h1_text
+        
+        # Try h2 tag
+        h2_tag = soup.find('h2')
+        if h2_tag and h2_tag.get_text().strip():
+            h2_text = h2_tag.get_text().strip()
+            if len(h2_text) > 5 and not h2_text.endswith('.onion'):
+                return h2_text
+        
+        # Try meta title
+        meta_title = soup.find('meta', attrs={'property': 'og:title'})
+        if meta_title and meta_title.get('content'):
+            og_title = meta_title.get('content').strip()
+            if len(og_title) > 5 and not og_title.endswith('.onion'):
+                return og_title
+        
+        # Try meta site name
+        meta_site = soup.find('meta', attrs={'property': 'og:site_name'})
+        if meta_site and meta_site.get('content'):
+            site_name = meta_site.get('content').strip()
+            if len(site_name) > 3 and not site_name.endswith('.onion'):
+                return site_name
+        
+        # Try to extract from URL path if it's meaningful
+        parsed_url = urlparse(url)
+        if parsed_url.path and parsed_url.path != '/' and len(parsed_url.path) > 3:
+            path_title = parsed_url.path.replace('/', ' ').replace('-', ' ').replace('_', ' ').strip()
+            if len(path_title) > 5:
+                return path_title.title()
+        
+        return None
+    except Exception as e:
+        print(f"⚠️ Error in extract_better_title: {e}")
+        return None
+
+def wait_for_title_to_load(driver, timeout=30):
     """Wait for the page title to change from loading states like 'One moment, please...'"""
     loading_titles = [
         "One moment, please...",
@@ -1321,7 +1381,175 @@ def wait_for_title_to_load(driver, timeout=15):
         "Loading, just a moment...",
         "Page is loading, please wait...",
         "Loading, please wait while we prepare...",
-        "One moment while we prepare the page..."
+        "One moment while we prepare the page...",
+        # Additional loading states commonly found on onion sites
+        "Connecting...",
+        "Establishing connection...",
+        "Connecting to server...",
+        "Server connection...",
+        "Initializing...",
+        "Please wait while connecting...",
+        "Connecting to hidden service...",
+        "Tor connection...",
+        "Establishing secure connection...",
+        "Secure connection...",
+        "Loading content...",
+        "Content loading...",
+        "Preparing page...",
+        "Page preparation...",
+        "Site loading...",
+        "Website loading...",
+        "Loading website...",
+        "Please wait...",
+        "Wait...",
+        "Loading...",
+        "Please wait a moment...",
+        "Just a moment please...",
+        "One moment while we connect...",
+        "Connecting please wait...",
+        "Please wait while we establish connection...",
+        "Establishing connection please wait...",
+        "Connection in progress...",
+        "Loading in progress...",
+        "Page loading in progress...",
+        "Site loading in progress...",
+        "Website loading in progress...",
+        "Content loading in progress...",
+        "Loading content in progress...",
+        "Preparing content...",
+        "Content preparation...",
+        "Loading resources...",
+        "Resource loading...",
+        "Loading assets...",
+        "Asset loading...",
+        "Loading scripts...",
+        "Script loading...",
+        "Loading styles...",
+        "Style loading...",
+        "Loading images...",
+        "Image loading...",
+        "Loading fonts...",
+        "Font loading...",
+        "Loading data...",
+        "Data loading...",
+        "Loading information...",
+        "Information loading...",
+        "Loading details...",
+        "Detail loading...",
+        "Loading page content...",
+        "Page content loading...",
+        "Loading site content...",
+        "Site content loading...",
+        "Loading website content...",
+        "Website content loading...",
+        "Loading page data...",
+        "Page data loading...",
+        "Loading site data...",
+        "Site data loading...",
+        "Loading website data...",
+        "Website data loading...",
+        "Loading page information...",
+        "Page information loading...",
+        "Loading site information...",
+        "Site information loading...",
+        "Loading website information...",
+        "Website information loading...",
+        "Loading page details...",
+        "Page detail loading...",
+        "Loading site details...",
+        "Site detail loading...",
+        "Loading website details...",
+        "Website detail loading...",
+        "Loading page resources...",
+        "Page resource loading...",
+        "Loading site resources...",
+        "Site resource loading...",
+        "Loading website resources...",
+        "Website resource loading...",
+        "Loading page assets...",
+        "Page asset loading...",
+        "Loading site assets...",
+        "Site asset loading...",
+        "Loading website assets...",
+        "Website asset loading...",
+        "Loading page scripts...",
+        "Page script loading...",
+        "Loading site scripts...",
+        "Site script loading...",
+        "Loading website scripts...",
+        "Website script loading...",
+        "Loading page styles...",
+        "Page style loading...",
+        "Loading site styles...",
+        "Site style loading...",
+        "Loading website styles...",
+        "Website style loading...",
+        "Loading page images...",
+        "Page image loading...",
+        "Loading site images...",
+        "Site image loading...",
+        "Loading website images...",
+        "Website image loading...",
+        "Loading page fonts...",
+        "Page font loading...",
+        "Loading site fonts...",
+        "Site font loading...",
+        "Loading website fonts...",
+        "Website font loading...",
+        "Loading page data...",
+        "Page data loading...",
+        "Loading site data...",
+        "Site data loading...",
+        "Loading website data...",
+        "Website data loading...",
+        "Loading page information...",
+        "Page information loading...",
+        "Loading site information...",
+        "Site information loading...",
+        "Loading website information...",
+        "Website information loading...",
+        "Loading page details...",
+        "Page detail loading...",
+        "Loading site details...",
+        "Site detail loading...",
+        "Loading website details...",
+        "Website detail loading...",
+        "Loading page resources...",
+        "Page resource loading...",
+        "Loading site resources...",
+        "Site resource loading...",
+        "Loading website resources...",
+        "Website resource loading...",
+        "Loading page assets...",
+        "Page asset loading...",
+        "Loading site assets...",
+        "Site asset loading...",
+        "Loading website assets...",
+        "Website asset loading...",
+        "Loading page scripts...",
+        "Page script loading...",
+        "Loading site scripts...",
+        "Site script loading...",
+        "Loading website scripts...",
+        "Website script loading...",
+        "Loading page styles...",
+        "Page style loading...",
+        "Loading site styles...",
+        "Site style loading...",
+        "Loading website styles...",
+        "Website style loading...",
+        "Loading page images...",
+        "Page image loading...",
+        "Loading site images...",
+        "Site image loading...",
+        "Loading website images...",
+        "Website image loading...",
+        "Loading page fonts...",
+        "Page font loading...",
+        "Loading site fonts...",
+        "Site font loading...",
+        "Loading website fonts...",
+        "Website font loading..."
     ]
     
     def check_title_loaded(_driver):
@@ -1334,6 +1562,13 @@ def wait_for_title_to_load(driver, timeout=15):
             # Also check if title is empty or very short (likely still loading)
             if not current_title or len(current_title) < 3:
                 return False
+            # Check if title is just the onion URL (common when page hasn't loaded properly)
+            if current_title.endswith('.onion') and len(current_title) < 50:
+                return False
+            # Check if title contains common error indicators
+            error_indicators = ['error', 'failed', 'timeout', 'connection failed', 'not found', '404']
+            if any(indicator in current_title.lower() for indicator in error_indicators):
+                return False
             return True
         except:
             return False
@@ -1344,10 +1579,10 @@ def wait_for_title_to_load(driver, timeout=15):
     except:
         return False
 
-def recapture_title_after_page_change(driver, url, worker_id, timeout=10):
+def recapture_title_after_page_change(driver, url, worker_id, timeout=20):
     """Re-capture title after page interactions to ensure we have the current page title"""
     try:
-        # Wait for title to load properly
+        # Wait for title to load properly with increased timeout
         if wait_for_title_to_load(driver, timeout=timeout):
             print(f"✅ [{worker_id}] Page title loaded successfully")
         else:
@@ -1768,15 +2003,44 @@ def process_url_fast(url, worker_id):
 
         # Wait for the page title to load properly (not loading states like "One moment, please...")
         print(f"⏳ [{worker_id}] Waiting for page title to load...")
-        if wait_for_title_to_load(driver, timeout=15):
-            print(f"✅ [{worker_id}] Page title loaded successfully")
-        else:
-            print(f"⚠️ [{worker_id}] Page title may still be loading, continuing anyway")
-
+        
+        # Multiple attempts to get a proper title
+        max_title_attempts = 3
+        title_attempt = 0
+        proper_title_found = False
+        
+        while title_attempt < max_title_attempts and not proper_title_found:
+            title_attempt += 1
+            print(f"🔄 [{worker_id}] Title extraction attempt {title_attempt}/{max_title_attempts}")
+            
+            if wait_for_title_to_load(driver, timeout=30):
+                print(f"✅ [{worker_id}] Page title loaded successfully")
+                proper_title_found = True
+            else:
+                print(f"⚠️ [{worker_id}] Page title may still be loading, attempt {title_attempt}")
+                if title_attempt < max_title_attempts:
+                    # Try refreshing the page and waiting again
+                    try:
+                        driver.refresh()
+                        time.sleep(5)  # Wait for page to start loading
+                    except:
+                        pass
+        
         # Get page content after title has loaded
         html = driver.page_source
         soup = BeautifulSoup(html, 'html.parser')
         current_page_title = soup.title.string.strip() if soup.title else "NoTitle"
+        
+        # Additional check: if title is just the onion URL, try to extract from multiple sources
+        if current_page_title.endswith('.onion') and len(current_page_title) < 50:
+            print(f"🔍 [{worker_id}] Title appears to be onion URL, trying alternative extraction...")
+            
+            better_title = extract_better_title(soup, url)
+            if better_title:
+                current_page_title = better_title
+                print(f"📄 [{worker_id}] Using alternative title: {current_page_title}")
+            else:
+                print(f"⚠️ [{worker_id}] Could not find better title, using onion URL")
         
         # Use root title for consistent site context instead of random page titles
         title = get_or_set_root_title(url, current_page_title)
@@ -5188,8 +5452,34 @@ def classify_site(url, title, html_content):
         text_to_analyze = f"{url} {title} {html_content}".lower()
         
         # CRITICAL: Check for CSAM first - CSAM should NEVER be overridden by any other category
-        csam_keywords = ["child", "loli", "loliporn", "lolita", "boys", "girls", "teen", "young", "minor", "child porn", "childxxx", "preteen"]
-        csam_detected = any(keyword in text_to_analyze for keyword in csam_keywords)
+        # Use more specific CSAM keywords to reduce false positives
+        explicit_csam_keywords = ["loli", "loliporn", "lolita", "child porn", "childxxx", "preteen", "child exploitation"]
+        age_exploitation_keywords = ["13yo", "14yo", "15yo", "16yo", "17yo", "underage", "barely legal"]
+        
+        # Check for explicit CSAM terms first
+        explicit_csam_detected = any(keyword in text_to_analyze for keyword in explicit_csam_keywords)
+        
+        # Check for age exploitation terms (but be more careful about context)
+        age_exploitation_detected = any(keyword in text_to_analyze for keyword in age_exploitation_keywords)
+        
+        # Check for escort terms only in suspicious contexts
+        escort_keywords = ["escort service", "escort agency", "escort business", "escort company"]
+        escort_detected = any(keyword in text_to_analyze for keyword in escort_keywords)
+        
+        # Context-aware CSAM detection
+        csam_detected = explicit_csam_detected or age_exploitation_detected
+        
+        # Additional context check: if this looks like a carding/marketplace site, be more careful about CSAM classification
+        carding_indicators = ["card", "cc", "dumps", "cvv", "credit", "debit", "paypal", "carding", "ccpp", "cloned cards", "paypal accounts"]
+        marketplace_indicators = ["market", "shop", "store", "vendor", "seller", "buy", "marketplace"]
+        
+        is_likely_carding = any(indicator in text_to_analyze for indicator in carding_indicators)
+        is_likely_marketplace = any(indicator in text_to_analyze for indicator in marketplace_indicators)
+        
+        # If this is clearly a carding/marketplace site, only classify as CSAM if explicit terms are found
+        if (is_likely_carding or is_likely_marketplace) and not explicit_csam_detected:
+            csam_detected = False
+            print(f"🔍 Carding/marketplace site detected - requiring explicit CSAM terms for classification")
         
         if csam_detected:
             print(f"🚨 CSAM content detected - this takes absolute priority over all other classifications")
@@ -5308,6 +5598,9 @@ def classify_site(url, title, html_content):
                 return ["scam", "mining botnet"]
             else:
                 return ["scam"]
+        # Check for Western Union hack scams specifically
+        elif any(term in text_to_analyze for term in ["western union hack", "western union", "moneygram hack", "moneygram"]):
+            return ["scam"]
         elif any(word in text_to_analyze for word in ["wallet", "hack", "hacker", "hackers", "bitcoin generator", "btc generator", "private key generator", "stolen wallet"]):
             return ["scam"]
         elif any(word in text_to_analyze for word in ["market", "shop", "store", "vendor", "seller"]):
@@ -5316,7 +5609,8 @@ def classify_site(url, title, html_content):
             return ["darknet forum profile"]
         elif any(word in text_to_analyze for word in ["card", "cc", "dumps"]):
             return ["carding"]
-        elif any(word in text_to_analyze for word in ["child", "loli", "teen", "young"]):
+        # More specific CSAM fallback - only use explicit terms
+        elif any(word in text_to_analyze for word in ["loli", "loliporn", "child porn", "childxxx", "preteen"]):
             return ["csam"]
         elif any(word in text_to_analyze for word in ["traffic", "slave", "escort", "prostitution"]):
             return ["human trafficking"]
