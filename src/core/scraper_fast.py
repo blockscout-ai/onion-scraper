@@ -161,6 +161,16 @@ from enhanced_content_signatures import analyze_page_content, extract_addresses_
 # === SMART TRANSACTION LEARNING SYSTEM ===
 from smart_interaction_executor import execute_smart_transaction
 
+# === METRICS TRACKING SYSTEM ===
+try:
+    from metrics.time_series_tracker import get_metrics_tracker
+    metrics_tracker = get_metrics_tracker()
+    print("📊 Metrics tracking system initialized")
+except ImportError:
+    # Fallback if metrics module not found
+    print("⚠️ Metrics tracking system not available - continuing without metrics")
+    metrics_tracker = None
+
 # ---[ Load Environment Variables ]---
 def load_env_file():
     """Load environment variables from .env file if it exists"""
@@ -430,7 +440,7 @@ SECONDARY_INPUT_CSV = "data/raw/crypto_addresses_fast.csv"
 
 # Input rotation settings
 ENABLE_INPUT_ROTATION = True
-ROTATE_INPUT_EVERY_N_URLS = 500  # Switch input files every 500 URLs
+ROTATE_INPUT_EVERY_N_URLS = 150  # Switch input files every 500 URLs
 CSAM_ONLY_FROM_SECONDARY = True  # Only process CSAM sites from secondary input
 
 # Current input tracking
@@ -441,7 +451,7 @@ input_rotation_lock = threading.Lock()
 # Resume configuration - set to start from a specific row (1-based indexing)
 # Set START_FROM_ROW = 1 to start from the beginning
 # Set START_FROM_ROW = N to start from row N (where N is the row number in the CSV)
-START_FROM_ROW = 310  # Currently set to start from row 3233
+START_FROM_ROW = 337  # Currently set to start from row 3233
 OUTPUT_CSV = "data/raw/crypto_addresses_fast.csv"
 SCREENSHOT_DIR = "data/raw/screenshots_fast"
 CAPTCHA_FAILED_CSV = "data/raw/captcha_failed_fast.csv"
@@ -1621,6 +1631,10 @@ def process_url_fast(url, worker_id):
     driver = None
     results = [] # Initialize results list at the top level of the function
     
+    # === METRICS TRACKING ===
+    extraction_start_time = time.time()
+    ai_used = False
+    
     # === ML LEARNING SYSTEM INTEGRATION ===
     ml_extractor = None
     try:
@@ -2203,6 +2217,15 @@ def process_url_fast(url, worker_id):
                 print(f"❌ [{worker_id}] AI fallback used but found 0 addresses")
             else:
                 print(f"❌ [{worker_id}] Both traditional and AI methods failed to find addresses")
+            
+            # Record AI interaction in metrics system
+            if ai_used and metrics_tracker:
+                try:
+                    ai_time = time.time() - extraction_start_time
+                    metrics_tracker.record_ai_interaction("ai_fallback", bool(addresses), ai_time)
+                    print(f"📊 [{worker_id}] Metrics: Recorded AI interaction (success={bool(addresses)}, time={ai_time:.2f}s)")
+                except Exception as e:
+                    print(f"⚠️ [{worker_id}] AI metrics recording failed: {e}")
         
         elif len(addresses) > 0:
             print(f"✅ [{worker_id}] Traditional methods successful - found {len(addresses)} addresses (AI fallback not needed)")
@@ -2223,8 +2246,24 @@ def process_url_fast(url, worker_id):
                         results.extend(coin_results)
                         ai_used = True
                         print(f"✅ [{worker_id}] AI coin selection found {len(coin_results)} addresses!")
+                        # Record AI coin selection success
+                        if metrics_tracker:
+                            try:
+                                ai_time = time.time() - extraction_start_time
+                                metrics_tracker.record_ai_interaction("ai_coin_selection", True, ai_time)
+                                print(f"📊 [{worker_id}] Metrics: Recorded AI coin selection success (time={ai_time:.2f}s)")
+                            except Exception as e:
+                                print(f"⚠️ [{worker_id}] AI coin selection metrics recording failed: {e}")
                 except Exception as e:
                     print(f"⚠️ [{worker_id}] AI coin selection failed: {e}")
+                    # Record AI coin selection failure
+                    if metrics_tracker:
+                        try:
+                            ai_time = time.time() - extraction_start_time
+                            metrics_tracker.record_ai_interaction("ai_coin_selection", False, ai_time)
+                            print(f"📊 [{worker_id}] Metrics: Recorded AI coin selection failure (time={ai_time:.2f}s)")
+                        except Exception as e:
+                            print(f"⚠️ [{worker_id}] AI coin selection metrics recording failed: {e}")
             else:
                 print(f"💰 [{worker_id}] Coin selection page detected, but skipping AI handling (addresses already found or AI disabled)")
         
@@ -2568,8 +2607,18 @@ def process_url_fast(url, worker_id):
             except Exception as e:
                 print(f"⚠️ [{worker_id}] ML site result recording failed: {e}")
         
+        # === METRICS TRACKING ===
+        processing_time = time.time() - extraction_start_time
+        
         if len(results) == 0:
             print(f"❌ [{worker_id}] No addresses found on {get_base_domain(url)}")
+            # Record failure in metrics system
+            if metrics_tracker:
+                try:
+                    metrics_tracker.record_failure(url, str(strategy), "no_addresses", processing_time)
+                    print(f"📊 [{worker_id}] Metrics: Recorded failure (time={processing_time:.2f}s)")
+                except Exception as e:
+                    print(f"⚠️ [{worker_id}] Metrics recording failed: {e}")
             # Record failure in agent system
             try:
                 integrated_agents.record_failure(url, "no_addresses", strategy, worker_id, "address_extraction")
@@ -2580,6 +2629,13 @@ def process_url_fast(url, worker_id):
             print(f"📊 [{worker_id}] Final results summary:")
             for i, result in enumerate(results):
                 print(f"   {i+1}. {result['chain']} - {result['address'][:8]}...{result['address'][-8:]} → 📸 {result['screenshot']}")
+            # Record success in metrics system
+            if metrics_tracker:
+                try:
+                    metrics_tracker.record_success(url, str(strategy), len(results), processing_time)
+                    print(f"📊 [{worker_id}] Metrics: Recorded success (addresses={len(results)}, time={processing_time:.2f}s)")
+                except Exception as e:
+                    print(f"⚠️ [{worker_id}] Metrics recording failed: {e}")
             # Record success in agent system
             try:
                 integrated_agents.record_success(url, strategy, worker_id, "address_extraction", results)
@@ -5761,6 +5817,9 @@ def process_url_immediately(url, worker_id, priority="HIGH"):
     """Immediately process a high-priority URL for human trafficking detection"""
     print(f"🚨 [{worker_id}] IMMEDIATE PROCESSING - {priority} PRIORITY URL: {get_base_domain(url)}")
     
+    # === METRICS TRACKING ===
+    immediate_start_time = time.time()
+    
     # Initialize variables to ensure they are available in the 'finally' block
     driver = None
     addresses = []
@@ -5862,11 +5921,37 @@ def process_url_immediately(url, worker_id, priority="HIGH"):
         ]
         write_to_csv_threadsafe(immediate_data, "data/raw/immediate_processing_log.csv")
         
+        # === METRICS TRACKING ===
+        immediate_processing_time = time.time() - immediate_start_time
+        
+        if results and metrics_tracker:
+            try:
+                metrics_tracker.record_success(url, "immediate_processing", len(results), immediate_processing_time)
+                print(f"📊 [{worker_id}] Metrics: Recorded immediate processing success (addresses={len(results)}, time={immediate_processing_time:.2f}s)")
+            except Exception as e:
+                print(f"⚠️ [{worker_id}] Immediate processing metrics recording failed: {e}")
+        elif not results and metrics_tracker:
+            try:
+                metrics_tracker.record_failure(url, "immediate_processing", "no_addresses", immediate_processing_time)
+                print(f"📊 [{worker_id}] Metrics: Recorded immediate processing failure (time={immediate_processing_time:.2f}s)")
+            except Exception as e:
+                print(f"⚠️ [{worker_id}] Immediate processing metrics recording failed: {e}")
+        
         print(f"🎉 [{worker_id}] Immediate processing completed for {get_base_domain(url)}")
         return results
         
     except Exception as e:
         print(f"❌ [{worker_id}] Immediate processing failed for {get_base_domain(url)}: {e}")
+        
+        # === METRICS TRACKING ===
+        if metrics_tracker:
+            try:
+                immediate_processing_time = time.time() - immediate_start_time
+                metrics_tracker.record_failure(url, "immediate_processing", "processing_error", immediate_processing_time)
+                print(f"📊 [{worker_id}] Metrics: Recorded immediate processing error (time={immediate_processing_time:.2f}s)")
+            except Exception as metrics_e:
+                print(f"⚠️ [{worker_id}] Immediate processing error metrics recording failed: {metrics_e}")
+        
         # Add to retry list if it's a captcha/login failure
         if any(reason in str(e).lower() for reason in RETRY_REASONS):
             retry_data = [url, "immediate_processing_failed", str(e), datetime.utcnow().isoformat()]
