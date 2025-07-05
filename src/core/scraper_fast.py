@@ -420,7 +420,7 @@ ROTATE_EVERY_N = 33  # More frequent rotation for better anonymity
 
 # ---[ MULTI-INPUT FILE CONFIGURATION ]---
 # Primary input file for new URLs
-PRIMARY_INPUT_CSV = "data/raw/human_trafficking_alerts_0702.csv"
+PRIMARY_INPUT_CSV = "/Users/jasoncomer/onion_scraper_2/data/raw/consolidated_onions_20250704_032019.csv"
 
 # Secondary input source: Google Sheet URLs (column F)
 USE_GOOGLE_SHEET_AS_SECONDARY = True
@@ -441,17 +441,17 @@ input_rotation_lock = threading.Lock()
 # Resume configuration - set to start from a specific row (1-based indexing)
 # Set START_FROM_ROW = 1 to start from the beginning
 # Set START_FROM_ROW = N to start from row N (where N is the row number in the CSV)
-START_FROM_ROW = 1  # Currently set to start from row 3233
+START_FROM_ROW = 310  # Currently set to start from row 3233
 OUTPUT_CSV = "data/raw/crypto_addresses_fast.csv"
 SCREENSHOT_DIR = "data/raw/screenshots_fast"
 CAPTCHA_FAILED_CSV = "data/raw/captcha_failed_fast.csv"
 UNSOLVED_DIR = "data/raw/unsolved_captchas_fast"
-MAX_DEPTH = 6  # Reduced for speed
+MAX_DEPTH = 2  # Reduced for speed
 PAGE_LOAD_TIMEOUT = 45  # Reduced to avoid Chrome internal limits
-MAX_WORKERS = 10  # Reduced to prevent DevTools port conflicts on macOS
+MAX_WORKERS = 8  # Reduced to prevent DevTools port conflicts on macOS
 FAST_MODE = True
 HEADLESS_MODE = True  # Changed to False to watch browser
-BATCH_SIZE = 20  # Batch CSV writes
+BATCH_SIZE = 1  # Batch CSV writes
 
 # Enhanced safety and reliability settings
 MAX_RETRIES = 5  # Increased retries for better success rate
@@ -1275,6 +1275,31 @@ def wait_for_title_to_load(driver, timeout=15):
     except:
         return False
 
+def recapture_title_after_page_change(driver, url, worker_id, timeout=10):
+    """Re-capture title after page interactions to ensure we have the current page title"""
+    try:
+        # Wait for title to load properly
+        if wait_for_title_to_load(driver, timeout=timeout):
+            print(f"✅ [{worker_id}] Page title loaded successfully")
+        else:
+            print(f"⚠️ [{worker_id}] Page title may still be loading, continuing anyway")
+        
+        # Get updated page content and title
+        html = driver.page_source
+        soup = BeautifulSoup(html, 'html.parser')
+        current_page_title = soup.title.string.strip() if soup.title else "NoTitle"
+        
+        # Update the title using the root title system
+        updated_title = get_or_set_root_title(url, current_page_title)
+        
+        print(f"📄 [{worker_id}] Updated page title: {updated_title}")
+        return updated_title, html, soup
+        
+    except Exception as e:
+        print(f"⚠️ [{worker_id}] Error re-capturing title: {e}")
+        # Return original title as fallback
+        return None, None, None
+
 def wait_for_address_in_dom(driver, timeout=15):
     """Enhanced wait for cryptocurrency addresses to appear in the DOM with dynamic content detection"""
     def check(_driver):
@@ -1911,6 +1936,12 @@ def process_url_fast(url, worker_id):
                                 time.sleep(3)
                                 scroll_entire_page(driver)
                                 time.sleep(1)
+                                
+                                # Re-capture title after login
+                                updated_title, html, soup = recapture_title_after_page_change(driver, url, worker_id)
+                                if updated_title:
+                                    title = updated_title
+                                
                                 addresses = extract_addresses_enhanced(driver.page_source, url, title)
                                 if addresses:
                                     print(f"🎯 [{worker_id}] Login revealed {len(addresses)} addresses!")
@@ -1925,6 +1956,12 @@ def process_url_fast(url, worker_id):
                     time.sleep(3)
                     scroll_entire_page(driver)
                     time.sleep(1)
+                    
+                    # Re-capture title after registration
+                    updated_title, html, soup = recapture_title_after_page_change(driver, url, worker_id)
+                    if updated_title:
+                        title = updated_title
+                    
                     addresses = extract_addresses_enhanced(driver.page_source, url, title)
                     if addresses:
                         print(f"🎯 [{worker_id}] Registration revealed {len(addresses)} addresses!")
@@ -1945,8 +1982,12 @@ def process_url_fast(url, worker_id):
                 scroll_entire_page(driver)
                 time.sleep(1)
                 
+                # Re-capture title after add to cart
+                updated_title, html, soup = recapture_title_after_page_change(driver, url, worker_id)
+                if updated_title:
+                    title = updated_title
+                
                 # Re-extract after add to cart
-                print(f"🔍 [{worker_id}] Checking for addresses after add to cart...")
                 addresses = extract_addresses_enhanced(driver.page_source, url, title)
                 if addresses:
                     print(f"🎯 [{worker_id}] Add to cart revealed {len(addresses)} addresses!")
@@ -1963,9 +2004,10 @@ def process_url_fast(url, worker_id):
                         scroll_entire_page(driver)
                         time.sleep(1)
                         
-                        print(f"🔍 [{worker_id}] Checking for addresses on checkout page...")
-                        print(f"📄 [{worker_id}] New page title: {driver.title}")
-                        print(f"🌐 [{worker_id}] New URL: {driver.current_url}")
+                        # Re-capture title after checkout
+                        updated_title, html, soup = recapture_title_after_page_change(driver, url, worker_id)
+                        if updated_title:
+                            title = updated_title
                         
                         addresses = extract_addresses_enhanced(driver.page_source, url, title)
                         if addresses:
@@ -1981,6 +2023,11 @@ def process_url_fast(url, worker_id):
                                 scroll_entire_page(driver)
                                 time.sleep(1)
                                 
+                                # Re-capture title after form filling
+                                updated_title, html, soup = recapture_title_after_page_change(driver, url, worker_id)
+                                if updated_title:
+                                    title = updated_title
+                                
                                 addresses = extract_addresses_enhanced(driver.page_source, url, title)
                                 if addresses:
                                     print(f"🎯 [{worker_id}] Form filling revealed {len(addresses)} addresses!")
@@ -1992,6 +2039,12 @@ def process_url_fast(url, worker_id):
                                         time.sleep(3)
                                         scroll_entire_page(driver)
                                         time.sleep(1)
+                                        
+                                        # Re-capture title after crypto selection
+                                        updated_title, html, soup = recapture_title_after_page_change(driver, url, worker_id)
+                                        if updated_title:
+                                            title = updated_title
+                                        
                                         addresses = extract_addresses_enhanced(driver.page_source, url, title)
                                         if addresses:
                                             print(f"🎯 [{worker_id}] Crypto selection revealed {len(addresses)} addresses!")
@@ -2020,6 +2073,11 @@ def process_url_fast(url, worker_id):
                 try:
                     driver.get(link_url)
                     time.sleep(SHORT_WAIT)
+                    
+                    # Re-capture title after navigation to new page
+                    updated_title, html, soup = recapture_title_after_page_change(driver, link_url, worker_id)
+                    if updated_title:
+                        title = updated_title
                     
                     # Abort this link if we hit a Chrome error page
                     if is_chrome_error_page(driver.page_source):
@@ -2078,6 +2136,11 @@ def process_url_fast(url, worker_id):
                     time.sleep(LONG_WAIT)
                     scroll_entire_page(driver)
                     
+                    # Re-capture title after AI interaction
+                    updated_title, html, soup = recapture_title_after_page_change(driver, url, worker_id)
+                    if updated_title:
+                        title = updated_title
+                    
                     # Re-extract after AI interaction
                     addresses = extract_addresses_enhanced(driver.page_source, url, title)
                     if addresses:
@@ -2105,6 +2168,12 @@ def process_url_fast(url, worker_id):
                 if ai_handled:
                     print(f"🤖 [{worker_id}] AI form handling completed, waiting for page...")
                     time.sleep(LONG_WAIT)
+                    
+                    # Re-capture title after AI form handling
+                    updated_title, html, soup = recapture_title_after_page_change(driver, url, worker_id)
+                    if updated_title:
+                        title = updated_title
+                    
                     addresses = extract_addresses_enhanced(driver.page_source, url, title)
                     if addresses:
                         print(f"✅ [{worker_id}] AI form handling found {len(addresses)} addresses!")
@@ -2116,6 +2185,7 @@ def process_url_fast(url, worker_id):
                     smart_result = execute_smart_transaction(driver, driver.page_source, url, title)
                     if smart_result['success'] and smart_result.get('addresses_found'):
                         addresses.extend(smart_result['addresses_found'])
+                        results.extend(smart_result['addresses_found'])
                         ai_used = True
                         print(f"🎯 [{worker_id}] Smart transaction found {len(smart_result['addresses_found'])} addresses!")
                     elif smart_result.get('steps_completed', 0) > 0:
@@ -6548,8 +6618,7 @@ def should_skip_page(url, title, html):
         "hacked wallets", "stolen wallets", "wallet market",
         "wallet shop", "bitcoin wallet shop", "buy stolen bitcoin wallets",
         "buy stolen cryptocurrency wallets", "buy stolen crypto wallets",
-        "buy stolen cryptocurrency wallet", "buy stolen crypto wallet", "buy stolen bitcoin wallet",
-        "stolen bitcoin wallets", "stolen cryptocurrency wallets", "stolen crypto wallets",
+        "buy stolen bitcoin wallet", "stolen bitcoin wallets", "stolen cryptocurrency wallets", "stolen crypto wallets",
         "stolen bitcoin wallet", "stolen cryptocurrency wallet", "stolen crypto wallet",
         "wallet database", "wallet dump",
         "wallet leak", "wallet cracker", "wallet hack", "wallet hacker", "wallet hackers" 
@@ -7467,7 +7536,6 @@ def smart_iterative_ecommerce_flow(driver, url, title, categories, max_iteration
                 time.sleep(1)
                 
                 # Check for and handle email modals that might appear after clicking buy
-                print(f"   🔍 Checking for email modals after buy button click...")
                 modal_context = {
                     "trigger_action": "navbar_buy_click",
                     "page_state": "post_buy_click",
@@ -7475,7 +7543,6 @@ def smart_iterative_ecommerce_flow(driver, url, title, categories, max_iteration
                 }
                 modal_handled = try_handle_generic_email_modal_with_retries(driver, worker_id, modal_context)
                 if modal_handled:
-                    print(f"   ✅ Email modal handled successfully after buy click")
                     time.sleep(2)  # Wait for modal submission to process
                 
                 addresses_found = extract_addresses_enhanced(driver.page_source, url, title)
@@ -7510,7 +7577,6 @@ def smart_iterative_ecommerce_flow(driver, url, title, categories, max_iteration
                 print(f"   ✅ Action '{best_action}' completed successfully")
                 
                 # Check for and handle email modals that might appear after any action
-                print(f"   🔍 Checking for email modals after '{best_action}' action...")
                 modal_context = {
                     "trigger_action": best_action,
                     "page_state": f"post_{best_action}",
@@ -7518,7 +7584,6 @@ def smart_iterative_ecommerce_flow(driver, url, title, categories, max_iteration
                 }
                 modal_handled = try_handle_generic_email_modal_with_retries(driver, worker_id, modal_context)
                 if modal_handled:
-                    print(f"   ✅ Email modal handled successfully after '{best_action}' action")
                     time.sleep(2)  # Wait for modal submission to process
                 
                 # Special handling: if we successfully added to cart, try to proceed to checkout
@@ -7533,7 +7598,6 @@ def smart_iterative_ecommerce_flow(driver, url, title, categories, max_iteration
                         time.sleep(MEDIUM_WAIT)
                         
                         # Check for modals again after checkout click
-                        print(f"   🔍 Checking for email modals after checkout click...")
                         checkout_modal_context = {
                             "trigger_action": "checkout_click",
                             "page_state": "checkout_page",
@@ -7541,7 +7605,6 @@ def smart_iterative_ecommerce_flow(driver, url, title, categories, max_iteration
                         }
                         checkout_modal_handled = try_handle_generic_email_modal_with_retries(driver, worker_id, checkout_modal_context)
                         if checkout_modal_handled:
-                            print(f"   ✅ Email modal handled successfully after checkout click")
                             time.sleep(2)
                         
                         # Now try to complete the checkout process
@@ -8638,8 +8701,6 @@ def handle_generic_email_modal(driver, context):
     Returns True if modal was handled, False otherwise.
     """
     try:
-        print(f"🔍 [Modal Handler] Starting modal detection for context: {context}")
-        
         # Look for common modal selectors
         modal_selectors = [
             '#blockoPayModal',  # Specific to this site
@@ -8649,42 +8710,30 @@ def handle_generic_email_modal(driver, context):
         
         for selector in modal_selectors:
             try:
-                print(f"🔍 [Modal Handler] Checking selector: {selector}")
                 modals = driver.find_elements(By.CSS_SELECTOR, selector)
                 for modal in modals:
                     if modal.is_displayed():
-                        print(f"🎯 [Modal Handler] Found visible modal with selector: {selector}")
                         # Look for email input in the modal
                         email_inputs = modal.find_elements(By.XPATH, 
                             ".//input[@type='email'] | .//input[contains(@placeholder, 'email')] | .//input[contains(@placeholder, 'mail')]")
                         
                         if email_inputs:
                             email_input = email_inputs[0]
-                            print(f"📝 [Modal Handler] Found email input in modal")
                             
                             # Generate email
                             timestamp = int(time.time())
                             random_suffix = get_random_suffix()
                             email = f'user_{timestamp}_{random_suffix}@protonmail.com'
-                            print(f"📧 [Modal Handler] Generated email: {email}")
                             
                             # Fill email with slow typing
-                            print(f"⏳ [Modal Handler] Clearing email field...")
                             email_input.clear()
-                            time.sleep(1)  # Wait 1 second after clearing
+                            time.sleep(1)
                             
-                            print(f"⌨️ [Modal Handler] Typing email character by character...")
-                            for i, char in enumerate(email):
+                            for char in email:
                                 email_input.send_keys(char)
-                                print(f"   Typed character {i+1}/{len(email)}: '{char}'")
-                                time.sleep(0.3)  # 300ms delay between characters
+                                time.sleep(0.3)
                             
-                            print(f"✅ [Modal Handler] Email field filled successfully")
-                            time.sleep(2)  # Wait 2 seconds to see the filled email
-                            
-                            # Verify the email was entered correctly
-                            entered_value = email_input.get_attribute('value')
-                            print(f"🔍 [Modal Handler] Email field contains: '{entered_value}'")
+                            time.sleep(2)
                             
                             # Look for submit button
                             submit_buttons = modal.find_elements(By.XPATH,
@@ -8696,60 +8745,42 @@ def handle_generic_email_modal(driver, context):
                             
                             if submit_buttons:
                                 submit_button = submit_buttons[0]
-                                print(f"🔘 [Modal Handler] Found submit button: {submit_button.text[:30]}")
-                                print(f"⏰ [Modal Handler] Waiting 5 seconds before clicking submit button...")
-                                time.sleep(5)  # Wait 5 seconds before clicking
-                                
-                                print(f"🖱️ [Modal Handler] Clicking submit button now...")
+                                time.sleep(5)
                                 submit_button.click()
-                                print(f"✅ [Modal Handler] Submit button clicked successfully")
-                                time.sleep(3)  # Wait for modal to close
+                                time.sleep(3)
+                                print(f"✅ [Modal Handler] SUCCESS: Filled email and clicked submit in modal")
                                 return True
                             else:
                                 # Try pressing Enter on the email input
-                                print(f"⌨️ [Modal Handler] No submit button found, pressing Enter key...")
-                                time.sleep(2)  # Wait 2 seconds before pressing Enter
+                                time.sleep(2)
                                 email_input.send_keys(Keys.RETURN)
-                                print(f"✅ [Modal Handler] Pressed Enter key on email input")
-                                time.sleep(3)  # Wait for response
+                                time.sleep(3)
+                                print(f"✅ [Modal Handler] SUCCESS: Filled email and pressed Enter in modal")
                                 return True
             except Exception as e:
-                print(f"⚠️ [Modal Handler] Error with selector {selector}: {e}")
                 continue
         
         # If no modal found, look for email inputs anywhere on the page
-        print(f"🔍 [Modal Handler] No modal found, checking for email inputs anywhere on page...")
         email_inputs = driver.find_elements(By.XPATH, 
             "//input[@type='email'] | //input[contains(@placeholder, 'email')] | //input[contains(@placeholder, 'mail')]")
         
         if email_inputs:
             email_input = email_inputs[0]
             if email_input.is_displayed():
-                print(f"📝 [Modal Handler] Found standalone email input")
-                
                 # Generate email
                 timestamp = int(time.time())
                 random_suffix = get_random_suffix()
                 email = f'user_{timestamp}_{random_suffix}@protonmail.com'
-                print(f"📧 [Modal Handler] Generated email: {email}")
                 
                 # Fill email with slow typing
-                print(f"⏳ [Modal Handler] Clearing email field...")
                 email_input.clear()
-                time.sleep(1)  # Wait 1 second after clearing
+                time.sleep(1)
                 
-                print(f"⌨️ [Modal Handler] Typing email character by character...")
-                for i, char in enumerate(email):
+                for char in email:
                     email_input.send_keys(char)
-                    print(f"   Typed character {i+1}/{len(email)}: '{char}'")
-                    time.sleep(0.3)  # 300ms delay between characters
+                    time.sleep(0.3)
                 
-                print(f"✅ [Modal Handler] Email field filled successfully")
-                time.sleep(2)  # Wait 2 seconds to see the filled email
-                
-                # Verify the email was entered correctly
-                entered_value = email_input.get_attribute('value')
-                print(f"🔍 [Modal Handler] Email field contains: '{entered_value}'")
+                time.sleep(2)
                 
                 # Look for nearby submit button
                 try:
@@ -8764,89 +8795,64 @@ def handle_generic_email_modal(driver, context):
                         
                         if submit_buttons:
                             submit_button = submit_buttons[0]
-                            print(f"🔘 [Modal Handler] Found submit button in form: {submit_button.text[:30]}")
-                            print(f"⏰ [Modal Handler] Waiting 5 seconds before clicking submit button...")
-                            time.sleep(5)  # Wait 5 seconds before clicking
-                            
-                            print(f"🖱️ [Modal Handler] Clicking submit button now...")
+                            time.sleep(5)
                             submit_button.click()
-                            print(f"✅ [Modal Handler] Submit button clicked successfully")
-                            time.sleep(3)  # Wait for response
+                            time.sleep(3)
+                            print(f"✅ [Modal Handler] SUCCESS: Filled email and clicked submit in form")
                             return True
                 except:
                     pass
                 
                 # Try pressing Enter
-                print(f"⌨️ [Modal Handler] No submit button found, pressing Enter key...")
-                time.sleep(2)  # Wait 2 seconds before pressing Enter
+                time.sleep(2)
                 email_input.send_keys(Keys.RETURN)
-                print(f"✅ [Modal Handler] Pressed Enter key on email input")
-                time.sleep(3)  # Wait for response
+                time.sleep(3)
+                print(f"✅ [Modal Handler] SUCCESS: Filled email and pressed Enter")
                 return True
         
-        print(f"❌ [Modal Handler] No email inputs found anywhere on page")
         return False
         
     except Exception as e:
-        print(f"❌ [Modal Handler] Error: {e}")
+        print(f"❌ [Modal Handler] ERROR: {e}")
         return False
 
 def try_handle_generic_email_modal_with_retries(driver, worker_id, context):
     """
-    Try to handle generic email modal up to 3 times with 2s wait between attempts. Logs each attempt.
+    Try to handle generic email modal up to 3 times with 2s wait between attempts.
     Fallback: fill all visible inputs and try to click a submit/payment button.
     """
-    print(f"🔄 [Modal Retry Handler] Starting modal detection with retries for context: {context}")
-    
     for attempt in range(1, 4):
-        print(f"🛠️ [Modal Retry Handler] Attempt {attempt}/3: Checking for generic email modal after {context}...")
         time.sleep(2)
         try:
             if handle_generic_email_modal(driver, context):
-                print(f"✅ [Modal Retry Handler] Generic email modal handled after {context} (attempt {attempt}).")
+                print(f"✅ [Modal Retry Handler] SUCCESS: Modal handled (attempt {attempt})")
                 return True
-            else:
-                print(f"🛠️ [Modal Retry Handler] No generic email modal found after {context} (attempt {attempt}).")
         except Exception as e:
-            print(f"⚠️ [Modal Retry Handler] Error in generic email modal handler after {context} (attempt {attempt}): {e}")
+            print(f"❌ [Modal Retry Handler] ERROR: {e}")
     
     # Fallback: fill all visible inputs and try to click a submit/payment button
-    print(f"🔄 [Modal Retry Handler] No modal/email handled after retries for {context}. Trying fallback approach...")
-    print(f"🔄 [Modal Retry Handler] Attempting to fill all visible inputs...")
     fields_filled = fill_visible_inputs_anywhere(driver)
     if fields_filled > 0:
-        print(f"✅ [Modal Retry Handler] Filled {fields_filled} visible input fields. Attempting to click a submit/payment button...")
         buttons = driver.find_elements(By.XPATH, "//button | //input[@type='submit'] | //input[@type='button']")
         for btn in buttons:
             try:
                 if btn.is_displayed() and btn.is_enabled():
                     btn_text = (btn.text or btn.get_attribute('value') or '').lower()
                     if any(word in btn_text for word in ['pay', 'submit', 'buy', 'send', 'continue', 'ok', 'download']):
-                        print(f"🔘 [Modal Retry Handler] Found suitable button: {btn_text}")
-                        print(f"⏰ [Modal Retry Handler] Waiting 3 seconds before clicking fallback button...")
-                        time.sleep(3)  # Wait 3 seconds before clicking
-                        
-                        print(f"🖱️ [Modal Retry Handler] Clicking fallback button now...")
+                        time.sleep(3)
                         btn.click()
-                        print(f"✅ [Modal Retry Handler] Fallback button clicked successfully: {btn_text}")
-                        time.sleep(2)  # Wait for response
+                        print(f"✅ [Modal Retry Handler] SUCCESS: Fallback button clicked: {btn_text}")
+                        time.sleep(2)
                         return True
             except Exception as e:
-                print(f"⚠️ [Modal Retry Handler] Could not click button: {e}")
                 continue
-        print(f"❌ [Modal Retry Handler] No suitable button found to click after filling inputs.")
-    else:
-        print(f"❌ [Modal Retry Handler] No visible input fields were filled.")
     
-    # NEW: Try clicking JOIN button as a last fallback
-    print(f"🔄 [Modal Retry Handler] Attempting to click JOIN button as last fallback...")
+    # Try clicking JOIN button as a last fallback
     if try_click_join_button(driver):
-        print(f"✅ [Modal Retry Handler] JOIN button clicked as fallback.")
+        print(f"✅ [Modal Retry Handler] SUCCESS: JOIN button clicked as fallback")
         return True
-    else:
-        print(f"❌ [Modal Retry Handler] JOIN button not found or not clickable.")
 
-    print(f"❌ [Modal Retry Handler] All modal handling attempts failed for context: {context}")
+    print(f"❌ [Modal Retry Handler] FAILED: All modal handling attempts failed")
     return False
 
 # Utility to detect Chrome's built-in network error pages so we can abort early.
